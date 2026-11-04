@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body{margin:0;width:300px;padding:16px;font:14px "Segoe UI",system-ui,sans-serif;color:#eef0ff;background:#0b0820}
+h1{font-size:16px;margin:0 0 8px}
+#read{font-size:44px;font-weight:800;color:#39ff88;line-height:1}
+#db{color:#9aa0c8;margin-bottom:6px}
+input[type=range]{width:100%;accent-color:#39ff88}
+.row{display:flex;gap:6px;margin:8px 0}
+button,select{font:inherit;color:#eef0ff;background:#1a1540;border:1px solid #ffffff2a;border-radius:10px;padding:7px;cursor:pointer}
+.row button{flex:1}
+select{width:100%}
+label{display:flex;justify-content:space-between;align-items:center;margin:8px 0}
+.note{color:#9aa0c8;font-size:12px;margin-top:8px}
+</style></head><body>
+<h1>Discord Amplifier</h1>
+<div id="read">1x</div><div id="db">+0 dB</div>
+<input type="range" id="gain" min="0" max="100" step="0.1" value="0" aria-label="Gain">
+<div class="row">
+  <button data-x="10">10x</button><button data-x="100">100x</button>
+  <button data-x="1000">1000x</button><button data-x="10000">10000x</button>
+</div>
+<select id="mode" aria-label="Limiter">
+  <option value="soft">Soft clip</option><option value="hard">Hard clip</option>
+</select>
+<label for="on">Boost on <input type="checkbox" id="on" checked></label>
+<div class="note">Reload Discord after installing, then re-join voice so it picks up the boosted mic.</div>
+<script src="popup.js"></script>
+</body></html>

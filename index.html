@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discord Amplifier</title>
+<style>
+:root{--bg:#0b0820;--ink:#eef0ff;--dim:#9aa0c8;--glass:rgba(255,255,255,.07);--edge:rgba(255,255,255,.16);--hot:#39ff88;--warn:#ff3b6b;--cool:#6a7bff}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif;
+background:radial-gradient(60% 50% at 15% 10%,#3a1d8f55,transparent),radial-gradient(50% 50% at 90% 85%,#0b6bff44,transparent),var(--bg)}
+main{width:min(520px,100%);display:grid;gap:14px}
+.card{background:var(--glass);border:1px solid var(--edge);border-radius:22px;padding:20px;backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%)}
+h1{margin:0 0 2px;font-size:20px;font-weight:600}
+.sub{margin:0;color:var(--dim);font-size:14px}
+.read{font-size:clamp(48px,14vw,76px);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--hot);text-shadow:0 0 28px #39ff8866;margin:6px 0 2px}
+.db{color:var(--dim);font-size:14px}
+input[type=range]{width:100%;accent-color:var(--hot);margin:14px 0 8px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+button,select{font:inherit;color:var(--ink)}
+.chip{flex:1;min-width:70px;padding:9px 6px;border-radius:999px;border:1px solid var(--edge);background:var(--glass);cursor:pointer}
+.chip:hover,.chip:focus-visible{border-color:var(--hot);outline:none}
+label{display:block;font-size:13px;color:var(--dim);margin:10px 0 4px}
+select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--edge);background:#14102e}
+.meter{height:14px;border-radius:99px;background:#ffffff14;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--hot),#ffe94a 70%,var(--warn));transition:width .05s}
+.clip{font-size:13px;color:var(--dim);margin-top:6px}.clip.on{color:var(--warn);font-weight:600}
+#go{width:100%;padding:16px;border-radius:16px;border:0;font-size:18px;font-weight:700;cursor:pointer;color:#04140a;background:var(--hot);box-shadow:0 0 30px #39ff8855}
+#go.live{background:var(--warn);color:#fff;box-shadow:0 0 30px #ff3b6b55}
+.note{font-size:13px;color:var(--dim)}
+.err{color:var(--warn);font-size:14px;min-height:1.2em}
+@media (prefers-reduced-motion:reduce){.meter i{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <section class="card">
+    <h1>Discord Amplifier</h1>
+    <p class="sub">Boost your mic and send it to a virtual cable.</p>
+    <div class="read" id="read">1x</div>
+    <div class="db" id="db">0 dB</div>
+    <input type="range" id="gain" min="0" max="100" step="0.1" value="0" aria-label="Gain">
+    <div class="chips">
+      <button class="chip" data-x="10">10x</button>
+      <button class="chip" data-x="100">100x</button>
+      <button class="chip" data-x="1000">1000x</button>
+      <button class="chip" data-x="10000">10000x</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <label for="inp">Microphone</label>
+    <select id="inp"></select>
+    <label for="out">Output (pick "CABLE Input" for Discord)</label>
+    <select id="out"><option value="">Default output (you will hear yourself)</option></select>
+    <label for="mode">Limiter</label>
+    <select id="mode">
+      <option value="soft">Soft clip (rounded distortion)</option>
+      <option value="hard">Hard clip (harsh static)</option>
+    </select>
+  </section>
+
+  <section class="card">
+    <div class="meter"><i id="bar"></i></div>
+    <div class="clip" id="clip">Level</div>
+  </section>
+
+  <button id="go">Start</button>
+  <div class="err" id="err" role="alert"></div>
+  <p class="note">Use Chrome or Edge. Install VB-Cable, set the output above to "CABLE Input", then choose "CABLE Output" as your mic in Discord. Wear headphones, and keep your output off your speakers to avoid feedback.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let ctx, gainNode, shaper, analyser, stream, audio, raf, clipUntil = 0;
+
+const toGain = v => Math.pow(10, v / 25);          // slider 0..100 -> 1x..10000x
+const fromGain = x => 25 * Math.log10(x);
+const curve = mode => {
+  const n = 2048, c = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = i / (n - 1) * 2 - 1;
+    c[i] = mode === 'soft' ? Math.tanh(2.5 * x) / Math.tanh(2.5) : x;
+  }
+  return c;
+};
+
+function showGain() {
+  const g = toGain(+$('gain').value);
+  $('read').textContent = (g >= 100 ? Math.round(g) : g.toFixed(1).replace(/\.0$/, '')) + 'x';
+  $('db').textContent = '+' + (20 * Math.log10(g)).toFixed(0) + ' dB';
+  if (gainNode) gainNode.gain.setTargetAtTime(g, ctx.currentTime, 0.02);
+}
+
+async function listDevices() {
+  const devs = await navigator.mediaDevices.enumerateDevices();
+  const keep = { inp: $('inp').value, out: $('out').value };
+  $('inp').innerHTML = '';
+  $('out').innerHTML = '<option value="">Default output (you will hear yourself)</option>';
+  devs.forEach(d => {
+    const o = new Option(d.label || (d.kind === 'audioinput' ? 'Microphone' : 'Speaker'), d.deviceId);
+    if (d.kind === 'audioinput') $('inp').add(o);
+    if (d.kind === 'audiooutput' && d.deviceId !== 'default') $('out').add(o);
+  });
+  if (keep.inp) $('inp').value = keep.inp;
+  if (keep.out) $('out').value = keep.out;
+}
+
+async function start() {
+  $('err').textContent = '';
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: {
+      deviceId: $('inp').value ? { exact: $('inp').value } : undefined,
+      echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    await listDevices();
+    ctx = new AudioContext({ latencyHint: 'interactive' });
+    const src = ctx.createMediaStreamSource(stream);
+    gainNode = ctx.createGain();
+    shaper = ctx.createWaveShaper(); shaper.curve = curve($('mode').value); shaper.oversample = '4x';
+    analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
+    const dest = ctx.createMediaStreamDestination();
+    src.connect(gainNode).connect(shaper);
+    shaper.connect(analyser); shaper.connect(dest);
+    showGain();
+    audio = new Audio(); audio.srcObject = dest.stream;
+    if ($('out').value && audio.setSinkId) await audio.setSinkId($('out').value);
+    await audio.play();
+    $('go').textContent = 'Stop'; $('go').classList.add('live');
+    meter();
+  } catch (e) {
+    $('err').textContent = 'Could not start: ' + e.message;
+    stop();
+  }
+}
+
+function stop() {
+  cancelAnimationFrame(raf);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (audio) audio.pause();
+  if (ctx) ctx.close();
+  ctx = gainNode = shaper = analyser = stream = audio = null;
+  $('go').textContent = 'Start'; $('go').classList.remove('live');
+  $('bar').style.width = '0'; $('clip').textContent = 'Level'; $('clip').classList.remove('on');
+}
+
+function meter() {
+  const buf = new Float32Array(analyser.fftSize);
+  const tick = () => {
+    analyser.getFloatTimeDomainData(buf);
+    let p = 0; for (const v of buf) p = Math.max(p, Math.abs(v));
+    $('bar').style.width = Math.min(100, p * 100) + '%';
+    if (p >= 0.98) clipUntil = performance.now() + 400;
+    const c = performance.now() < clipUntil;
+    $('clip').textContent = c ? 'Clipping' : 'Level';
+    $('clip').classList.toggle('on', c);
+    raf = requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+$('gain').addEventListener('input', showGain);
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+  $('gain').value = fromGain(+b.dataset.x); showGain();
+}));
+$('mode').addEventListener('change', () => { if (shaper) shaper.curve = curve($('mode').value); });
+$('out').addEventListener('change', async () => { if (audio && audio.setSinkId) await audio.setSinkId($('out').value); });
+$('go').addEventListener('click', () => ctx ? stop() : start());
+listDevices().catch(() => {});
+showGain();
+</script>
+</body>
+</html>

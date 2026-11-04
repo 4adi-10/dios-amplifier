@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Discord Amplifier",
+  "version": "1.0.0",
+  "description": "Boost your microphone on Discord in the browser.",
+  "permissions": ["storage"],
+  "action": { "default_popup": "popup.html", "default_title": "Discord Amplifier" },
+  "content_scripts": [
+    { "matches": ["https://*.discord.com/*"], "js": ["inject.js"], "run_at": "document_start", "world": "MAIN" },
+    { "matches": ["https://*.discord.com/*"], "js": ["bridge.js"], "run_at": "document_start" }
+  ]
+}

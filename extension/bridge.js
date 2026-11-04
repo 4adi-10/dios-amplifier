@@ -1,0 +1,9 @@
+// Runs in the extension's isolated world: reads settings and passes them to the page script.
+const DEFAULTS = { gain: 1, on: true, mode: 'soft' };
+const push = s => window.postMessage({ __mb: true, ...s }, '*');
+const load = () => chrome.storage.local.get(DEFAULTS, push);
+load();
+chrome.storage.onChanged.addListener(load);
+window.addEventListener('message', e => {
+  if (e.source === window && e.data && e.data.__mbReady) load();
+});
