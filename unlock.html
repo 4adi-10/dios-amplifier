@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>DIOS Amplifier: enter your access key</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400..600&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{min-height:100svh;display:grid;place-items:center;padding:24px;color:#fff;font:400 16px/1.5 "Epilogue",system-ui,sans-serif;background:#0b0509;overflow-x:hidden;isolation:isolate}
+body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;filter:blur(20px);
+ background:radial-gradient(38vmax 30vmax at 22% 25%,rgb(255 72 139/.45),transparent 62%),radial-gradient(34vmax 28vmax at 80% 20%,rgb(255 140 90/.22),transparent 62%),radial-gradient(40vmax 34vmax at 70% 85%,rgb(64 120 255/.28),transparent 64%);
+ animation:drift 26s ease-in-out infinite alternate}
+@keyframes drift{0%{transform:translate3d(0,0,0) rotate(0)}100%{transform:translate3d(-3vmax,3vmax,0) rotate(-6deg) scale(1.04)}}
+.card{position:relative;width:min(100%,440px);padding:32px;border-radius:28px;
+ background:linear-gradient(135deg,rgb(255 255 255/.14),rgb(255 255 255/.04) 45%,rgb(255 255 255/.07));
+ -webkit-backdrop-filter:blur(28px) saturate(185%);backdrop-filter:blur(28px) saturate(185%);border:1px solid rgb(255 255 255/.22);
+ box-shadow:inset 0 1px 0 rgb(255 255 255/.45),inset 0 -1px 0 rgb(255 255 255/.08),0 30px 80px -28px rgb(0 0 0/.65),0 8px 24px -12px rgb(255 72 139/.25)}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;
+ background:linear-gradient(115deg,rgb(255 255 255/.55),rgb(255 160 200/.25) 18%,transparent 35%,transparent 65%,rgb(140 180 255/.3) 85%,rgb(255 255 255/.35));
+ -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:500;margin-bottom:28px}
+.mark{width:22px;height:18px;display:grid;gap:3px}.mark i{display:block;height:4px;border-radius:2px;background:#ff488b}.mark i:nth-child(2){width:75%}.mark i:nth-child(3){width:50%}
+h1{margin:0 0 8px;font-size:32px;line-height:1.1;font-weight:400;letter-spacing:-.03em}
+p{margin:0;color:#d0c2ca}
+label{display:block;margin:28px 0 8px;font-size:13px;font-weight:500;color:#d0c2ca}
+input{width:100%;height:52px;padding:0 16px;border-radius:16px;font:500 16px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.04em;color:#fff;text-transform:uppercase;
+ background:rgb(0 0 0/.25);border:1px solid rgb(255 255 255/.18);box-shadow:inset 0 1px 3px rgb(0 0 0/.4);outline:none;transition:border-color .14s,box-shadow .14s}
+input::placeholder{color:rgb(255 255 255/.35)}
+input:focus{border-color:rgb(255 160 200/.8);box-shadow:inset 0 1px 3px rgb(0 0 0/.4),0 0 0 4px rgb(255 72 139/.18)}
+button{width:100%;height:52px;margin-top:16px;border:0;border-radius:999px;cursor:pointer;font:500 16px/1 "Epilogue",system-ui,sans-serif;color:#fff;position:relative;overflow:hidden;
+ background:radial-gradient(120% 160% at 30% 0%,#ffc2d9 0%,#ff6aa1 35%,#ff2f7a 75%);
+ box-shadow:inset 0 1px 0 rgb(255 255 255/.65),inset 0 -4px 10px rgb(120 0 40/.3),0 10px 28px -10px rgb(255 72 139/.8);text-shadow:0 1px 2px rgb(120 0 40/.35);transition:transform .14s}
+button::after{content:"";position:absolute;left:12%;right:12%;top:3px;height:42%;border-radius:999px;background:linear-gradient(180deg,rgb(255 255 255/.5),transparent)}
+button:hover{transform:translateY(-1px)}button:active{transform:translateY(0) scale(.985)}
+button[disabled]{opacity:.6;cursor:default}
+.err{min-height:1.5em;margin-top:14px;color:#ffb3cf;font-size:14px}
+.small{margin-top:20px;font-size:14px;color:#a89ca4}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>DIOS Amplifier</div>
+  <h1>Enter your access key</h1>
+  <p>DIOS Amplifier is invite only. Keys are made by admins.</p>
+  <form id="f" novalidate>
+    <label for="key">Access key</label>
+    <input id="key" name="key" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DIOS-XXXXXX-XXXXXX-…" required>
+    <button id="go" type="submit">Unlock the amplifier</button>
+    <div class="err" id="err" role="alert"></div>
+  </form>
+  <p class="small">No key? Ask the person who shared this site with you.</p>
+</main>
+<script>
+const f = document.getElementById('f'), go = document.getElementById('go'), err = document.getElementById('err'), key = document.getElementById('key');
+const nextPath = (() => { const n = new URLSearchParams(location.search).get('next') || '/'; return /^\/[^/\\]/.test(n) || n === '/' ? n : '/'; })();
+f.addEventListener('submit', async e => {
+  e.preventDefault();
+  err.textContent = '';
+  if (!key.value.trim()) { err.textContent = 'Paste your key first.'; key.focus(); return; }
+  go.disabled = true; go.textContent = 'Checking…';
+  try {
+    const r = await fetch('/api/unlock', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: key.value }) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.ok) { go.textContent = 'Unlocked'; location.replace(nextPath); return; }
+    err.textContent = j.error || 'That key did not work.';
+  } catch (e2) { err.textContent = 'Could not reach the server. Check your connection.'; }
+  go.disabled = false; go.textContent = 'Unlock the amplifier';
+});
+key.focus();
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>DIOS Amplifier: admin keys</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400..600&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{min-height:100svh;display:grid;place-items:center;padding:24px;color:#fff;font:400 16px/1.5 "Epilogue",system-ui,sans-serif;background:#0b0509;overflow-x:hidden;isolation:isolate}
+body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;filter:blur(20px);
+ background:radial-gradient(38vmax 30vmax at 22% 25%,rgb(255 72 139/.42),transparent 62%),radial-gradient(40vmax 34vmax at 75% 80%,rgb(64 120 255/.3),transparent 64%);
+ animation:drift 26s ease-in-out infinite alternate}
+@keyframes drift{100%{transform:translate3d(-3vmax,3vmax,0) rotate(-6deg) scale(1.04)}}
+.card{position:relative;width:min(100%,560px);padding:32px;border-radius:28px;
+ background:linear-gradient(135deg,rgb(255 255 255/.14),rgb(255 255 255/.04) 45%,rgb(255 255 255/.07));
+ -webkit-backdrop-filter:blur(28px) saturate(185%);backdrop-filter:blur(28px) saturate(185%);border:1px solid rgb(255 255 255/.22);
+ box-shadow:inset 0 1px 0 rgb(255 255 255/.45),0 30px 80px -28px rgb(0 0 0/.65),0 8px 24px -12px rgb(255 72 139/.25)}
+.brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:500;margin-bottom:24px}
+.mark{width:22px;height:18px;display:grid;gap:3px}.mark i{display:block;height:4px;border-radius:2px;background:#ff488b}.mark i:nth-child(2){width:75%}.mark i:nth-child(3){width:50%}
+h1{margin:0 0 6px;font-size:30px;line-height:1.1;font-weight:400;letter-spacing:-.03em}
+p{margin:0;color:#d0c2ca}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;margin:20px 0 8px;font-size:13px;font-weight:500;color:#d0c2ca}
+input,select{width:100%;height:48px;padding:0 14px;border-radius:14px;font:400 16px/1 "Epilogue",system-ui,sans-serif;color:#fff;
+ background:rgb(0 0 0/.25);border:1px solid rgb(255 255 255/.18);box-shadow:inset 0 1px 3px rgb(0 0 0/.4);outline:none}
+select option{background:#1b0e17}
+input:focus,select:focus{border-color:rgb(255 160 200/.8);box-shadow:inset 0 1px 3px rgb(0 0 0/.4),0 0 0 4px rgb(255 72 139/.18)}
+.btn{width:100%;height:52px;margin-top:20px;border:0;border-radius:999px;cursor:pointer;font:500 16px/1 "Epilogue",system-ui,sans-serif;color:#fff;
+ background:radial-gradient(120% 160% at 30% 0%,#ffc2d9 0%,#ff6aa1 35%,#ff2f7a 75%);box-shadow:inset 0 1px 0 rgb(255 255 255/.65),0 10px 28px -10px rgb(255 72 139/.8);transition:transform .14s}
+.btn:hover{transform:translateY(-1px)}.btn:active{transform:scale(.985)}.btn[disabled]{opacity:.6}
+.err{min-height:1.4em;margin-top:12px;color:#ffb3cf;font-size:14px}
+.keys{display:grid;gap:10px;margin-top:8px}
+.k{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:14px 16px;border-radius:16px;background:rgb(255 255 255/.06);border:1px solid rgb(255 255 255/.14)}
+.k code{font:500 15px/1.3 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.03em;word-break:break-all}
+.k small{grid-column:1/-1;color:#a89ca4;font-size:13px}
+.copy{height:36px;padding:0 14px;border-radius:999px;border:1px solid rgb(255 255 255/.22);background:linear-gradient(180deg,rgb(255 255 255/.14),rgb(255 255 255/.04));color:#fff;cursor:pointer;font:500 13px/1 "Epilogue",sans-serif}
+.copy:hover{border-color:rgb(255 255 255/.45)}
+.note{margin-top:20px;font-size:13px;color:#a89ca4}
+.note code{font-family:"JetBrains Mono",monospace;color:#fff}
+@media (max-width:520px){.row{grid-template-columns:1fr}.card{padding:24px}}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>DIOS Amplifier</div>
+  <h1>Make access keys</h1>
+  <p>For admins only. Each key unlocks the amplifier in one person’s browser.</p>
+  <form id="f" novalidate>
+    <div class="row">
+      <div><label for="user">Admin name</label><input id="user" autocomplete="username" required></div>
+      <div><label for="pw">Admin password</label><input id="pw" type="password" autocomplete="current-password" required></div>
+    </div>
+    <div class="row">
+      <div><label for="days">Key lasts</label>
+        <select id="days"><option value="1">1 day</option><option value="7">7 days</option><option value="30" selected>30 days</option><option value="365">1 year</option><option value="0">Never expires</option></select></div>
+      <div><label for="count">How many keys</label>
+        <select id="count"><option>1</option><option>3</option><option>5</option><option>10</option></select></div>
+    </div>
+    <button class="btn" id="go" type="submit">Generate keys</button>
+    <div class="err" id="err" role="alert"></div>
+  </form>
+  <div class="keys" id="keys" aria-live="polite"></div>
+  <p class="note">To turn a key off, add its id to <code>REVOKED_KEYS</code> in Vercel (Settings, Environment Variables) and redeploy.</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const fmt = e => e ? 'Expires ' + new Date(e * 1000).toLocaleString() : 'Never expires';
+$('f').addEventListener('submit', async e => {
+  e.preventDefault(); $('err').textContent = '';
+  $('go').disabled = true; $('go').textContent = 'Generating…';
+  try {
+    const r = await fetch('/api/generate', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ user: $('user').value, password: $('pw').value, days: +$('days').value, count: +$('count').value }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) { $('err').textContent = j.error || 'Could not make keys.'; }
+    else {
+      j.keys.forEach(k => {
+        const d = document.createElement('div'); d.className = 'k';
+        d.innerHTML = '<code></code><button type="button" class="copy">Copy</button><small></small>';
+        d.querySelector('code').textContent = k.key;
+        d.querySelector('small').textContent = fmt(k.exp) + ' · id ' + k.id + ' · made by ' + j.by;
+        d.querySelector('.copy').addEventListener('click', async ev => {
+          try { await navigator.clipboard.writeText(k.key); ev.target.textContent = 'Copied'; } catch (x) { ev.target.textContent = 'Select and copy'; }
+          setTimeout(() => ev.target.textContent = 'Copy', 1500);
+        });
+        $('keys').prepend(d);
+      });
+    }
+  } catch (x) { $('err').textContent = 'Could not reach the server.'; }
+  $('go').disabled = false; $('go').textContent = 'Generate keys';
+});
+</script>
+</body>
+</html>
