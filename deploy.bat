@@ -23,11 +23,20 @@ echo === GitHub ===
 gh auth status >nul 2>nul
 if errorlevel 1 gh auth login
 if not exist .git git init -b main
+
+rem Rename the old discord-amplifier repo to dios-amplifier (skipped if it is already renamed)
+git remote get-url origin 2>nul | findstr /i "discord-amplifier" >nul
+if not errorlevel 1 (
+  gh repo rename dios-amplifier --yes
+  for /f "delims=" %%u in ('gh repo view dios-amplifier --json url -q .url 2^>nul') do git remote set-url origin %%u.git
+)
+
 git add -A
-git commit -m "Discord Amplifier"
-gh repo create discord-amplifier --public --source=. --remote=origin --push
+git commit -m "DIOS Amplifier v2: 100,000x loud and clear engine, presets, gate, EQ, recorder, new design"
+git remote get-url origin >nul 2>nul
 if errorlevel 1 (
-  echo Repo may already exist, pushing to it instead.
+  gh repo create dios-amplifier --public --source=. --remote=origin --push
+) else (
   git push -u origin main
 )
 

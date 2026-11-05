@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Discord Amplifier",
-  "version": "1.0.0",
-  "description": "Boost your microphone on Discord in the browser.",
+  "name": "DIOS Amplifier",
+  "version": "2.0.0",
+  "description": "Boost your microphone up to 100,000x on Discord in the browser, with EQ and a limiter.",
   "permissions": ["storage"],
-  "action": { "default_popup": "popup.html", "default_title": "Discord Amplifier" },
+  "action": { "default_popup": "popup.html", "default_title": "DIOS Amplifier" },
   "content_scripts": [
     { "matches": ["https://*.discord.com/*"], "js": ["inject.js"], "run_at": "document_start", "world": "MAIN" },
     { "matches": ["https://*.discord.com/*"], "js": ["bridge.js"], "run_at": "document_start" }

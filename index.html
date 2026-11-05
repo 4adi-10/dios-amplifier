@@ -1,172 +1,355 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-type="software" data-radius="round" data-ground="sky" data-buttons="arrow" data-motion>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Discord Amplifier</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DIOS Amplifier: mic booster for Discord voice chat</title>
+<meta name="description" content="DIOS Amplifier boosts your microphone up to 100,000x with a noise gate, EQ and limiter, and sends it to Discord through VB-Cable or the Chrome extension.">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/system.css">
+<link rel="stylesheet" href="assets/ui/cards.css">
+<link rel="stylesheet" href="assets/motion/motion.css">
+<link rel="stylesheet" href="assets/backgrounds/backgrounds.css">
+<link rel="stylesheet" href="assets/layout/layout.css">
+<link rel="stylesheet" href="assets/icons/icon.css">
 <style>
-:root{--bg:#0b0820;--ink:#eef0ff;--dim:#9aa0c8;--glass:rgba(255,255,255,.07);--edge:rgba(255,255,255,.16);--hot:#39ff88;--warn:#ff3b6b;--cool:#6a7bff}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif;
-background:radial-gradient(60% 50% at 15% 10%,#3a1d8f55,transparent),radial-gradient(50% 50% at 90% 85%,#0b6bff44,transparent),var(--bg)}
-main{width:min(520px,100%);display:grid;gap:14px}
-.card{background:var(--glass);border:1px solid var(--edge);border-radius:22px;padding:20px;backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%)}
-h1{margin:0 0 2px;font-size:20px;font-weight:600}
-.sub{margin:0;color:var(--dim);font-size:14px}
-.read{font-size:clamp(48px,14vw,76px);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--hot);text-shadow:0 0 28px #39ff8866;margin:6px 0 2px}
-.db{color:var(--dim);font-size:14px}
-input[type=range]{width:100%;accent-color:var(--hot);margin:14px 0 8px}
-.chips{display:flex;gap:8px;flex-wrap:wrap}
-button,select{font:inherit;color:var(--ink)}
-.chip{flex:1;min-width:70px;padding:9px 6px;border-radius:999px;border:1px solid var(--edge);background:var(--glass);cursor:pointer}
-.chip:hover,.chip:focus-visible{border-color:var(--hot);outline:none}
-label{display:block;font-size:13px;color:var(--dim);margin:10px 0 4px}
-select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--edge);background:#14102e}
-.meter{height:14px;border-radius:99px;background:#ffffff14;overflow:hidden;margin-top:6px}
-.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--hot),#ffe94a 70%,var(--warn));transition:width .05s}
-.clip{font-size:13px;color:var(--dim);margin-top:6px}.clip.on{color:var(--warn);font-weight:600}
-#go{width:100%;padding:16px;border-radius:16px;border:0;font-size:18px;font-weight:700;cursor:pointer;color:#04140a;background:var(--hot);box-shadow:0 0 30px #39ff8855}
-#go.live{background:var(--warn);color:#fff;box-shadow:0 0 30px #ff3b6b55}
-.note{font-size:13px;color:var(--dim)}
-.err{color:var(--warn);font-size:14px;min-height:1.2em}
-@media (prefers-reduced-motion:reduce){.meter i{transition:none}}
+:root {
+  --p-bg: #0d060b; --p-surface: #1b0e17; --p-ink: #ffffff; --p-muted: #9a8f97;
+  --p-accent: #ff488b; --p-accent-ink: #0d060b; --p-action: #ff488b; --p-action-ink: #0d060b;
+  --p-inv-bg: #ffffff; --p-inv-surface: #ebebeb; --p-inv-ink: #0d060b; --p-inv-muted: #5e575c;
+  --p-inv-accent: #ff488b; --p-inv-accent-ink: #0d060b; --p-inv-action: #ff488b; --p-inv-action-ink: #0d060b;
+  --font-display: "Epilogue", system-ui, sans-serif;
+  --font-text: "Epilogue", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 400;
+  --display-tracking: -0.035em;
+  --display-tracking-xl: -0.045em;
+  --ly-scale: 0.97;
+}
 </style>
+<link rel="stylesheet" href="assets/ui/base.css">
+<link rel="stylesheet" href="assets/diagrams/diagram.css">
+<script src="assets/backgrounds/backgrounds.js"></script>
+<link rel="stylesheet" href="amp.css">
+<link rel="stylesheet" href="glass.css">
 </head>
 <body>
-<main>
-  <section class="card">
-    <h1>Discord Amplifier</h1>
-    <p class="sub">Boost your mic and send it to a virtual cable.</p>
-    <div class="read" id="read">1x</div>
-    <div class="db" id="db">0 dB</div>
-    <input type="range" id="gain" min="0" max="100" step="0.1" value="0" aria-label="Gain">
-    <div class="chips">
-      <button class="chip" data-x="10">10x</button>
-      <button class="chip" data-x="100">100x</button>
-      <button class="chip" data-x="1000">1000x</button>
-      <button class="chip" data-x="10000">10000x</button>
+<!-- type: software (site-kind software)
+     deal: hero collage, nav nav-centre, close close-word, footer footer-columns, rhythm space (the owner asked for liquid glass over one aurora, so the white band went),
+     buttons arrow, mark stack, ground sky, palette plum-black-pink, type epilogue, radius round
+     effect: the hero's live waveform canvas (the one timed loop, with its pause button)
+     moments: none -->
+<header class="nav nav--centre">
+  <div class="wrap nav__bar">
+    <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>DIOS Amplifier</a>
+    <nav class="nav__links" aria-label="Main">
+      <div class="nav__item"><a class="nav__link" href="#amp">Amplifier</a></div>
+      <div class="nav__item">
+        <a class="nav__link" href="#features">Features <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <div class="nav__menu">
+          <div class="wrap grid">
+            <div class="menu-col span-3">
+              <p class="t-label">Sound</p>
+              <a href="#features">Noise gate<span>Silences fans and keyboards</span></a>
+              <a href="#features">Three-band EQ<span>Bass, presence and treble</span></a>
+              <a href="#features">Limiter<span>Soft clip, hard clip, compressor</span></a>
+            </div>
+            <div class="menu-col span-3">
+              <p class="t-label">Control</p>
+              <a href="#features">Test recorder<span>Hear five seconds back</span></a>
+              <a href="#questions">Hotkeys<span>Mute and push-to-talk keys</span></a>
+            </div>
+            <div class="menu-col span-3">
+              <p class="t-label">Get it</p>
+              <a href="#setup">VB-Cable setup<span>For the Discord desktop app</span></a>
+              <a href="#extension">Chrome extension<span>For Discord in the browser</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="nav__item"><a class="nav__link" href="#setup">Setup</a></div>
+      <div class="nav__item"><a class="nav__link" href="#extension">Extension</a></div>
+      <div class="nav__item"><a class="nav__link" href="#questions">Questions</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--primary" href="#amp">Open the amplifier</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero hero--collage" aria-labelledby="hero-h">
+    <div class="wrap"><div class="hero-text grid hero__grid">
+      <div class="hero__text span-5">
+        <h1 id="hero-h">Mic booster for Discord voice chat</h1>
+        <p class="hero__lead">DIOS Amplifier raises your microphone up to 100,000x (+100 dB), and a compressor and limiter keep every word clear instead of distorted. Free, in Chrome or Edge.</p>
+        <div class="btn-row">
+          <a class="btn btn--primary" href="#amp">Open the amplifier<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+          <a class="btn btn--secondary" href="#extension">Get the extension</a>
+        </div>
+        <p class="hero__proof">Works with the Discord desktop app and Discord in Chrome.</p>
+      </div>
+      <div class="hero__art amp-ui span-6 start-7" role="img" aria-label="The DIOS Amplifier window boosting a quiet microphone signal to 100,000x, with its noise gate and bass settings">
+        <div class="ly-piece ly-piece--main hero-win" aria-hidden="true">
+          <div class="hero-win__bar"><span class="dots"><i></i><i></i><i></i></span><span>DIOS Amplifier</span></div>
+          <div class="hero-win__body">
+            <div class="hero-win__read"><b class="amp-mono" id="heroRead">100,000x</b><span>+100 dB · loud and clear</span></div>
+            <canvas id="heroWave" width="1120" height="440"></canvas>
+            <div class="hero-win__rows">
+              <div class="hero-win__row"><span>Noise gate</span><span class="bar" style="--v:62%"><i></i></span><em>−52 dB</em></div>
+              <div class="hero-win__row"><span>Bass</span><span class="bar" style="--v:70%"><i></i></span><em>+6 dB</em></div>
+              <div class="hero-win__row"><span>Treble</span><span class="bar" style="--v:55%"><i></i></span><em>+2 dB</em></div>
+            </div>
+          </div>
+        </div>
+        <button class="ui-pause hero-wave-pause" type="button" id="heroPause" aria-label="Pause the waveform" aria-pressed="false">
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2v8M8.5 2v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div class="ly-piece ly-piece--note amp-note" aria-hidden="true" data-ly-steps="700">
+          <div class="amp-note__head"><h5>Sent to Discord</h5><span data-step data-step-at="4">Live</span></div>
+          <div class="amp-note__line" data-step><i>✓</i><span>Mic boosted to <b>100,000x</b></span></div>
+          <div class="amp-note__line" data-step><i>✓</i><span>Fan noise gated under <b>−52 dB</b></span></div>
+          <div class="amp-note__line" data-step><i>✓</i><span>Out to <b>CABLE Input</b></span></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- APP-FRAME: the real, working amplifier. Two screens: every control stays usable, so nothing is cut by a fade. -->
+  <section class="section" id="amp" aria-labelledby="amp-h" style="--h: 2">
+    <div class="wrap">
+      <div class="grid">
+        <h2 id="amp-h" class="span-5">The amplifier, live in your browser</h2>
+        <p class="span-6 start-7 muted t-lead">Press Start, allow the microphone, then pick a preset. Settings stay saved on this computer. Use headphones so the boosted sound never reaches your mic.</p>
+      </div>
+      <div class="console ui amp-ui" id="console">
+        <div class="console__pane console__pane--rack">
+          <div class="c-head"><p class="c-title">Presets</p><span class="amp-chip" id="chip" data-state="off"><i></i><span id="chipText">Off</span></span></div>
+          <div class="c-presets" id="presets">
+            <button class="c-preset" type="button" data-preset="clean" aria-pressed="false"><b>Clean</b><span>10x · clear</span></button>
+            <button class="c-preset" type="button" data-preset="loud" aria-pressed="false"><b>Loud and clear</b><span>1,000x · clear</span></button>
+            <button class="c-preset" type="button" data-preset="max" aria-pressed="false"><b>Max clear</b><span>100,000x · clear</span></button>
+            <button class="c-preset" type="button" data-preset="bass" aria-pressed="false"><b>Bass boost</b><span>300x · bass +12</span></button>
+            <button class="c-preset" type="button" data-preset="radio" aria-pressed="false"><b>Radio</b><span>300x · compressor</span></button>
+            <button class="c-preset" type="button" data-preset="dist" aria-pressed="false"><b>Distorted</b><span>100,000x · hard clip</span></button>
+          </div>
+          <div class="c-group">
+            <label class="c-label" for="inp">Microphone</label>
+            <select class="c-select" id="inp"><option value="">Default microphone</option></select>
+          </div>
+          <div class="c-group">
+            <label class="c-label" for="out">Output (pick CABLE Input for Discord)</label>
+            <select class="c-select" id="out"><option value="">Default output</option></select>
+          </div>
+          <div class="c-group">
+            <label class="c-switch">Hear yourself (monitor) <input type="checkbox" id="monitor"></label>
+            <label class="c-switch">Push-to-talk, hold Space <input type="checkbox" id="ptt"></label>
+            <label class="c-switch">Browser noise suppression <input type="checkbox" id="ns" checked></label>
+          </div>
+          <div class="c-keys">
+            <span><kbd>M</kbd>Mute or unmute</span>
+            <span><kbd>Space</kbd>Talk, when push-to-talk is on</span>
+            <span><kbd>R</kbd>Record a 5 second test</span>
+          </div>
+        </div>
+        <div class="console__pane">
+          <div class="c-top">
+            <div class="c-read"><b id="read">1x</b><span id="db">+0 dB</span></div>
+            <button class="c-go" type="button" id="go">Start</button>
+          </div>
+          <div class="c-scope"><canvas id="scope" width="1600" height="400" aria-label="Live spectrum and waveform of the boosted microphone" role="img"></canvas></div>
+          <div class="c-meter">
+            <div class="c-meter__track"><div class="c-meter__fill" id="bar"></div><div class="c-meter__peak" id="peak"></div></div>
+            <span class="amp-chip" id="clip" data-state="off"><span id="clipText">0 clips</span></span>
+          </div>
+          <div class="c-group">
+            <label class="c-label" for="gain">Gain</label>
+            <input class="c-range" type="range" id="gain" min="0" max="100" step="0.1" value="0">
+            <div class="c-chips">
+              <button type="button" data-x="10">10x</button><button type="button" data-x="100">100x</button><button type="button" data-x="1000">1000x</button><button type="button" data-x="10000">10,000x</button><button type="button" data-x="100000">100,000x</button>
+            </div>
+          </div>
+          <div class="c-knobs">
+            <div class="c-knob"><label for="gate">Noise gate <output id="gateV" for="gate">Off</output></label><input class="c-range" type="range" id="gate" min="-90" max="-20" step="1" value="-90"></div>
+            <div class="c-knob"><label for="bass">Bass <output id="bassV" for="bass">0 dB</output></label><input class="c-range" type="range" id="bass" min="-12" max="15" step="1" value="0"></div>
+            <div class="c-knob"><label for="mid">Presence <output id="midV" for="mid">0 dB</output></label><input class="c-range" type="range" id="mid" min="-12" max="12" step="1" value="0"></div>
+            <div class="c-knob"><label for="treble">Treble <output id="trebleV" for="treble">0 dB</output></label><input class="c-range" type="range" id="treble" min="-12" max="12" step="1" value="0"></div>
+          </div>
+          <div class="c-row2">
+            <div class="c-group">
+              <label class="c-label" for="mode">Limiter</label>
+              <select class="c-select" id="mode">
+                <option value="clear">Loud and clear (no distortion)</option>
+                <option value="comp">Radio compressor</option>
+                <option value="soft">Soft clip (warm drive)</option>
+                <option value="hard">Hard clip (harsh static)</option>
+              </select>
+            </div>
+            <div class="c-group">
+              <span class="c-label">Test recorder</span>
+              <div class="c-rec">
+                <button class="c-btn" type="button" id="rec" disabled>Record 5 s</button>
+                <button class="c-btn" type="button" id="play" disabled>Play test</button>
+              </div>
+            </div>
+          </div>
+          <p class="c-status" id="status">Press Start to boost your mic.</p>
+          <p class="c-err" id="err" role="alert"></p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="card">
-    <label for="inp">Microphone</label>
-    <select id="inp"></select>
-    <label for="out">Output (pick "CABLE Input" for Discord)</label>
-    <select id="out"><option value="">Default output (you will hear yourself)</option></select>
-    <label for="mode">Limiter</label>
-    <select id="mode">
-      <option value="soft">Soft clip (rounded distortion)</option>
-      <option value="hard">Hard clip (harsh static)</option>
-    </select>
+  <section class="section feat" id="features" aria-labelledby="features-h" style="--hm: 2">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="features-h">Loud without the noise. <span class="muted">Three tools keep a boosted mic clean.</span></h2>
+      </div>
+      <div class="grid feat-grid">
+        <article class="card card--row">
+          <h3>Gates out fans and keys</h3>
+          <p>Anything under the threshold, like a PC fan or typing, is muted before it is boosted.</p>
+          <div class="panel panel--inset amp-ui" role="img" aria-label="A waveform where quiet parts are muted by the noise gate">
+            <div class="mini" aria-hidden="true">
+              <div class="mini__head"><b>Noise gate</b><span class="amp-mono">−52 dB</span></div>
+              <div class="mini__wave">
+                <i class="q" style="--h:6%"></i><i class="q" style="--h:9%"></i><i class="q" style="--h:5%"></i><i style="--h:40%"></i><i style="--h:78%"></i><i style="--h:95%"></i><i style="--h:60%"></i><i style="--h:84%"></i><i style="--h:52%"></i><i style="--h:30%"></i><i class="q" style="--h:7%"></i><i class="q" style="--h:4%"></i><i class="q" style="--h:8%"></i><i style="--h:46%"></i><i style="--h:88%"></i><i style="--h:70%"></i><i style="--h:36%"></i><i class="q" style="--h:6%"></i><i class="q" style="--h:5%"></i>
+              </div>
+            </div>
+          </div>
+        </article>
+        <article class="card card--row">
+          <h3>Shapes your voice with EQ</h3>
+          <p>Bass, presence and treble from −12 to +15 dB, so a thin mic sounds full.</p>
+          <div class="panel panel--inset amp-ui" role="img" aria-label="Three EQ bands with bass raised">
+            <div class="mini" aria-hidden="true">
+              <div class="mini__head"><b>EQ</b><span class="amp-mono">bass +6</span></div>
+              <div class="mini__bands">
+                <div><span><i style="--v:82%"></i></span><em>Bass</em></div>
+                <div><span><i style="--v:55%"></i></span><em>Presence</em></div>
+                <div><span><i style="--v:62%"></i></span><em>Treble</em></div>
+              </div>
+            </div>
+          </div>
+        </article>
+        <article class="card card--row">
+          <h3>Plays back a test clip</h3>
+          <p>Record five seconds and hear exactly what Discord gets before you join a call.</p>
+          <div class="panel panel--inset amp-ui" role="img" aria-label="A five second test recording ready to play">
+            <div class="mini" aria-hidden="true">
+              <div class="mini__head"><b>Test recorder</b><span class="amp-mono">0:05</span></div>
+              <div class="mini__wave">
+                <i style="--h:20%"></i><i style="--h:44%"></i><i style="--h:66%"></i><i style="--h:30%"></i><i style="--h:80%"></i><i style="--h:56%"></i><i style="--h:38%"></i><i style="--h:72%"></i><i style="--h:90%"></i><i style="--h:48%"></i><i style="--h:26%"></i><i style="--h:60%"></i><i style="--h:34%"></i><i style="--h:76%"></i><i style="--h:42%"></i><i style="--h:22%"></i>
+              </div>
+              <div class="mini__ctl"><span>Play test</span><span>Record 5 s</span></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
   </section>
 
-  <section class="card">
-    <div class="meter"><i id="bar"></i></div>
-    <div class="clip" id="clip">Level</div>
+  <section class="section" id="setup" aria-labelledby="setup-h" style="--hm: 2">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="setup-h">Setup for the Discord app in three steps</h2>
+        <p>The desktop app cannot be boosted directly, so the sound goes through VB-Cable, a free virtual audio cable.</p>
+      </div>
+      <div class="grid grid--top">
+        <div class="setup-glass span-5"><ol class="steps">
+          <li><div><h3>Install VB-Cable</h3><p>Download it from VB-Audio, run the installer as admin and restart your PC.</p></div></li>
+          <li><div><h3>Send DIOS to the cable</h3><p>In the amplifier, set Output to CABLE Input and press Start.</p></div></li>
+          <li><div><h3>Pick the cable in Discord</h3><p>In Voice and Video settings, set Input Device to CABLE Output and turn off automatic gain control.</p></div></li>
+        </ol></div>
+        <div class="panel span-6 start-7">
+          <div class="dg" data-diagram><script type="application/json">{"layout":"lanes","alt":"Your microphone goes into DIOS Amplifier, then to the Discord app, Discord in Chrome or the test recorder.","curve":"curve","input":{"label":"Your mic","icon":"ui:mic","meta":"−42 dB"},"core":{"label":"DIOS Amplifier","icon":"ui:cpu"},"lanes":[{"label":"CABLE Input","icon":"ui:headphones","meta":"desktop"},{"label":"Chrome extension","icon":"chrome","meta":"web"},{"label":"Test recorder","icon":"ui:audio-lines","meta":"5 s"}],"output":{"label":"Discord","icon":"discord","done":true}}</script></div>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <button id="go">Start</button>
-  <div class="err" id="err" role="alert"></div>
-  <p class="note">Use Chrome or Edge. Install VB-Cable, set the output above to "CABLE Input", then choose "CABLE Output" as your mic in Discord. Wear headphones, and keep your output off your speakers to avoid feedback.</p>
+  <section class="section" id="extension" aria-labelledby="ext-h" style="--hm: 2">
+    <div class="wrap">
+      <div class="grid grid--top fill">
+        <div class="span-5 stack-4">
+          <h2 id="ext-h">Chrome extension for Discord in the browser</h2>
+          <p class="t-lead">It boosts your mic inside discord.com with no cable. Same 100,000x gain, EQ and limiter, from a popup.</p>
+          <ol class="steps">
+            <li><div><h3>Download the folder</h3><p>Get the extension folder from GitHub.</p></div></li>
+            <li><div><h3>Load it in Chrome</h3><p>Open chrome://extensions, turn on Developer mode, click Load unpacked.</p></div></li>
+            <li><div><h3>Rejoin voice</h3><p>Reload Discord and join the channel again.</p></div></li>
+          </ol>
+          <div class="btn-row"><a class="btn btn--secondary" href="https://github.com/4adi-10/dios-amplifier/tree/main/extension">Get the extension</a></div>
+        </div>
+        <div class="span-6 start-7 ext-stage amp-ui" role="img" aria-label="The DIOS Amplifier extension popup set to 2,500x with bass raised">
+          <div class="ext-pop" aria-hidden="true">
+            <div class="ext-pop__head"><b>DIOS Amplifier</b><span class="amp-chip" data-state="live"><i></i>On</span></div>
+            <div class="ext-pop__read">2,500x <span class="amp-mono" style="font-size:15px;color:var(--a-mute);letter-spacing:0">+68 dB</span></div>
+            <div class="ext-pop__bar" style="--v:68%"><i></i></div>
+            <div class="ext-pop__row"><span>Bass</span><em>+6 dB</em></div>
+            <div class="ext-pop__row"><span>Treble</span><em>+2 dB</em></div>
+            <div class="ext-pop__row"><span>Presence</span><em>+3 dB</em></div>
+            <div class="ext-pop__row"><span>Limiter</span><em>Loud and clear</em></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="questions" aria-labelledby="faq-h">
+    <div class="wrap">
+      <div class="grid grid--top">
+        <div class="span-5"><h2 id="faq-h">Questions</h2></div>
+        <div class="faq span-6 start-7">
+          <div class="faq__item"><h3>How does 100,000x stay clear?</h3><p>The Loud and clear limiter compresses your voice and holds every peak just under full scale, so it never clips into static.</p></div>
+          <div class="faq__item"><h3>Do the hotkeys work in other windows?</h3><p>No. M, Space and R work while this tab is focused. Use Discord’s own keybinds for in-game push-to-talk.</p></div>
+          <div class="faq__item"><h3>Does it work on a phone?</h3><p>Not in the Discord app. Phones block virtual cables and mic changes between apps.</p></div>
+          <div class="faq__item"><h3>Which browsers work?</h3><p>Chrome and Edge on Windows or Mac. Firefox runs it, but cannot pick an output device.</p></div>
+          <div class="faq__item"><h3>Is my voice sent anywhere?</h3><p>No. All the audio work runs in your browser, and nothing is uploaded.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
-<script>
-const $ = id => document.getElementById(id);
-let ctx, gainNode, shaper, analyser, stream, audio, raf, clipUntil = 0;
+<footer class="footer closing" id="contact" aria-labelledby="close-h">
+  <div class="wrap">
+    <div class="closing__cta close--word">
+      <div class="section-head--split">
+        <div><h2 id="close-h">Boost your mic now</h2><p class="t-lead">Free, no account, runs in Chrome or Edge.</p></div>
+        <a class="btn btn--primary" href="#amp">Open the amplifier<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+      </div>
+      <p class="close__word" aria-hidden="true">DIOS Amplifier</p>
+    </div>
+    <div class="closing__links">
+      <div class="grid">
+        <div class="span-4 stack-4">
+          <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>DIOS Amplifier</a>
+          <p class="footer__lede">A free mic booster for Discord voice chat.</p>
+        </div>
+        <div class="span-2 footer__col"><h4>Amplifier</h4><ul><li><a href="#amp">Console</a></li><li><a href="#features">Features</a></li></ul></div>
+        <div class="span-2 footer__col"><h4>Setup</h4><ul><li><a href="#setup">VB-Cable</a></li><li><a href="#extension">Extension</a></li></ul></div>
+        <div class="span-2 footer__col"><h4>Help</h4><ul><li><a href="#questions">Questions</a></li></ul></div>
+      </div>
+      <div class="footer__legal">
+        <span>&copy; 2026 DIOS</span>
+        <span class="t-small muted">Product names and logos are trademarks of their owners</span>
+      </div>
+    </div>
+  </div>
+</footer>
 
-const toGain = v => Math.pow(10, v / 25);          // slider 0..100 -> 1x..10000x
-const fromGain = x => 25 * Math.log10(x);
-const curve = mode => {
-  const n = 2048, c = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = i / (n - 1) * 2 - 1;
-    c[i] = mode === 'soft' ? Math.tanh(2.5 * x) / Math.tanh(2.5) : x;
-  }
-  return c;
-};
-
-function showGain() {
-  const g = toGain(+$('gain').value);
-  $('read').textContent = (g >= 100 ? Math.round(g) : g.toFixed(1).replace(/\.0$/, '')) + 'x';
-  $('db').textContent = '+' + (20 * Math.log10(g)).toFixed(0) + ' dB';
-  if (gainNode) gainNode.gain.setTargetAtTime(g, ctx.currentTime, 0.02);
-}
-
-async function listDevices() {
-  const devs = await navigator.mediaDevices.enumerateDevices();
-  const keep = { inp: $('inp').value, out: $('out').value };
-  $('inp').innerHTML = '';
-  $('out').innerHTML = '<option value="">Default output (you will hear yourself)</option>';
-  devs.forEach(d => {
-    const o = new Option(d.label || (d.kind === 'audioinput' ? 'Microphone' : 'Speaker'), d.deviceId);
-    if (d.kind === 'audioinput') $('inp').add(o);
-    if (d.kind === 'audiooutput' && d.deviceId !== 'default') $('out').add(o);
-  });
-  if (keep.inp) $('inp').value = keep.inp;
-  if (keep.out) $('out').value = keep.out;
-}
-
-async function start() {
-  $('err').textContent = '';
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: {
-      deviceId: $('inp').value ? { exact: $('inp').value } : undefined,
-      echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    await listDevices();
-    ctx = new AudioContext({ latencyHint: 'interactive' });
-    const src = ctx.createMediaStreamSource(stream);
-    gainNode = ctx.createGain();
-    shaper = ctx.createWaveShaper(); shaper.curve = curve($('mode').value); shaper.oversample = '4x';
-    analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
-    const dest = ctx.createMediaStreamDestination();
-    src.connect(gainNode).connect(shaper);
-    shaper.connect(analyser); shaper.connect(dest);
-    showGain();
-    audio = new Audio(); audio.srcObject = dest.stream;
-    if ($('out').value && audio.setSinkId) await audio.setSinkId($('out').value);
-    await audio.play();
-    $('go').textContent = 'Stop'; $('go').classList.add('live');
-    meter();
-  } catch (e) {
-    $('err').textContent = 'Could not start: ' + e.message;
-    stop();
-  }
-}
-
-function stop() {
-  cancelAnimationFrame(raf);
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  if (audio) audio.pause();
-  if (ctx) ctx.close();
-  ctx = gainNode = shaper = analyser = stream = audio = null;
-  $('go').textContent = 'Start'; $('go').classList.remove('live');
-  $('bar').style.width = '0'; $('clip').textContent = 'Level'; $('clip').classList.remove('on');
-}
-
-function meter() {
-  const buf = new Float32Array(analyser.fftSize);
-  const tick = () => {
-    analyser.getFloatTimeDomainData(buf);
-    let p = 0; for (const v of buf) p = Math.max(p, Math.abs(v));
-    $('bar').style.width = Math.min(100, p * 100) + '%';
-    if (p >= 0.98) clipUntil = performance.now() + 400;
-    const c = performance.now() < clipUntil;
-    $('clip').textContent = c ? 'Clipping' : 'Level';
-    $('clip').classList.toggle('on', c);
-    raf = requestAnimationFrame(tick);
-  };
-  tick();
-}
-
-$('gain').addEventListener('input', showGain);
-document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
-  $('gain').value = fromGain(+b.dataset.x); showGain();
-}));
-$('mode').addEventListener('change', () => { if (shaper) shaper.curve = curve($('mode').value); });
-$('out').addEventListener('change', async () => { if (audio && audio.setSinkId) await audio.setSinkId($('out').value); });
-$('go').addEventListener('click', () => ctx ? stop() : start());
-listDevices().catch(() => {});
-showGain();
-</script>
+<script type="module" src="assets/system.js"></script>
+<script type="module" src="assets/motion/motion.js"></script>
+<script type="module" src="assets/layout/layout.js"></script>
+<script type="module" src="assets/diagrams/mount.js"></script>
+<script src="amp.js"></script>
 </body>
 </html>
