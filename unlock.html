@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="/intro.css">
+<script src="/intro.js"></script>
+<meta name="author" content="Aadi, DIOS Studioz">
+<meta name="copyright" content="&copy; 2026 DIOS Studioz. Fully made by Aadi.">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0d060b">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -49,9 +53,17 @@ button[disabled]{opacity:.6;cursor:default}
 .err{min-height:1.5em;margin-top:14px;color:#ffb3cf;font-size:14px}
 .small{margin-top:20px;font-size:14px;color:#a89ca4}
 @media (prefers-reduced-motion:reduce){body::before{animation:none}}
+.dios-copy { position: fixed; left: 0; right: 0; bottom: 16px; margin: 0; text-align: center; font-size: 12px; color: rgb(255 255 255 / .45); }
 </style>
 </head>
 <body>
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro__bg"></div>
+  <video class="intro__v" id="introV" src="/intro/dios-intro.mp4" poster="/intro/dios-intro.jpg" muted autoplay playsinline preload="auto"></video>
+  <p class="intro__by">DIOS Studioz &middot; made by Aadi</p>
+  <button class="intro__skip" id="introSkip" type="button">Skip</button>
+</div>
+
 <main class="card">
   <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>DIOS Amplifier</div>
   <h1>Enter your access key</h1>
@@ -64,6 +76,7 @@ button[disabled]{opacity:.6;cursor:default}
   </form>
   <p class="small">No key? Ask the person who shared this site with you.</p>
 </main>
+<p class="dios-copy">&copy; 2026 DIOS Studioz. Fully made by Aadi.</p>
 <script>
 const f = document.getElementById('f'), go = document.getElementById('go'), err = document.getElementById('err'), key = document.getElementById('key');
 const nextPath = (() => { const n = new URLSearchParams(location.search).get('next') || '/'; return /^\/[^/\\]/.test(n) || n === '/' ? n : '/'; })();

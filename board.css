@@ -67,3 +67,12 @@
 #ytHelper:empty { display: none; }
 #ytHelper { color: var(--a-ink-2); }
 #ytHelper[data-warn] { color: var(--a-warn); }
+/* sound and music effects */
+.b-fx { display: grid; gap: 10px; }
+.b-fx > .c-label { margin: 0; }
+.b-fxpresets { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.b-fxpresets .c-preset { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 9px 10px; }
+.b-fxpresets .c-preset span { font-size: 12px; }
+.b-eq { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1279px) { .b-fxpresets { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 639px) { .b-fxpresets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .b-eq { grid-template-columns: minmax(0, 1fr); } }

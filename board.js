@@ -6,7 +6,7 @@
   const $ = id => document.getElementById(id);
   if (!$('pads')) return;
   const KEY = 'dios-board-v1';
-  const DEF = { vol: 100, boost: 0, mode: 'clear', ytVol: 100, ytBoost: 0, duck: false, hear: true, ytUrl: '' };
+  const DEF = { vol: 100, boost: 0, mode: 'clear', ytVol: 100, ytBoost: 0, bass: 0, mid: 0, treble: 0, fx: '', duck: false, hear: true, ytUrl: '' };
   let S = { ...DEF };
   try { S = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
@@ -161,25 +161,43 @@
 
   /* ---------------- engine ---------------- */
   // pads ─ boost ─────┐
-  //                   ├─ comp ─ makeup ─ limiter ─ clip ─ out ─┬─ amp output (cable, recorder, monitor) + scope
-  // yt ─ duck ─ ytBoost ┘                                     └─ hear (your speakers, only when the amp output is the cable)
-  const curve = hard => {
+  //                   ├─ rumble ─ bass ─ presence ─ treble ─ comp ─ makeup ─ limiter ─ shaper ─ out ─┬─ amp output + scope
+  // yt ─ duck ─ ytBoost ┘                                                                            └─ hear (your speakers)
+  // the same tools as the mic: 3-band EQ and four limiter modes, from clean to harsh hard clip
+  const curve = mode => {
     const n = 4096, c = new Float32Array(n);
-    for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1, a = Math.abs(x); c[i] = hard || a < .8 ? x : Math.sign(x) * (.8 + .17 * Math.tanh((a - .8) / .17)); }
+    for (let i = 0; i < n; i++) {
+      const x = i / (n - 1) * 2 - 1, a = Math.abs(x);
+      c[i] = mode === 'hard' ? x
+        : mode === 'safe' ? (a < .8 ? x : Math.sign(x) * (.8 + .17 * Math.tanh((a - .8) / .17)))
+        : Math.tanh(2.5 * x) / Math.tanh(2.5);
+    }
     return c;
   };
-  const SAFE = curve(false), HARD = curve(true);
+  const SAFE = curve('safe'), HARD = curve('hard'), SOFT = curve('soft');
+  const FX_PRESETS = {
+    clean: { boost: 0,   ytBoost: 0,   bass: 0,  mid: 0, treble: 0,  mode: 'clear' },
+    loud:  { boost: 20,  ytBoost: 20,  bass: 3,  mid: 2, treble: 2,  mode: 'clear' },
+    max:   { boost: 60,  ytBoost: 60,  bass: 4,  mid: 3, treble: 3,  mode: 'clear' },
+    bass:  { boost: 30,  ytBoost: 30,  bass: 15, mid: 0, treble: -2, mode: 'clear' },
+    radio: { boost: 30,  ytBoost: 30,  bass: -8, mid: 8, treble: -4, mode: 'comp' },
+    dist:  { boost: 100, ytBoost: 100, bass: 6,  mid: 0, treble: 0,  mode: 'hard' }
+  };
   let A = null, bus = null, prev = null;
 
   function makeBus(ctx, outs) {
     const b = { ctx, pads: ctx.createGain(), yt: ctx.createGain(), duck: ctx.createGain(), boost: ctx.createGain(), ytBoost: ctx.createGain(),
+      hp: ctx.createBiquadFilter(), bass: ctx.createBiquadFilter(), mid: ctx.createBiquadFilter(), treble: ctx.createBiquadFilter(),
       comp: ctx.createDynamicsCompressor(), makeup: ctx.createGain(),
       lim: ctx.createDynamicsCompressor(), shaper: ctx.createWaveShaper(), out: ctx.createGain(), hear: ctx.createGain() };
-    b.comp.attack.value = .004; b.comp.release.value = .2;
+    b.hp.type = 'highpass'; b.hp.frequency.value = 25; b.hp.Q.value = .7;            // only sub-rumble; music keeps its bass
+    b.bass.type = 'lowshelf'; b.bass.frequency.value = 120;
+    b.mid.type = 'peaking'; b.mid.frequency.value = 2500; b.mid.Q.value = .9;
+    b.treble.type = 'highshelf'; b.treble.frequency.value = 7000;
     b.lim.knee.value = 0; b.lim.attack.value = .001; b.lim.release.value = .06;
-    b.pads.connect(b.boost).connect(b.comp);
-    b.yt.connect(b.duck).connect(b.ytBoost).connect(b.comp);
-    b.comp.connect(b.makeup).connect(b.lim).connect(b.shaper).connect(b.out);
+    b.pads.connect(b.boost).connect(b.hp);
+    b.yt.connect(b.duck).connect(b.ytBoost).connect(b.hp);
+    b.hp.connect(b.bass).connect(b.mid).connect(b.treble).connect(b.comp).connect(b.makeup).connect(b.lim).connect(b.shaper).connect(b.out);
     outs.forEach(o => b.out.connect(o));
     b.out.connect(b.hear).connect(ctx.destination);
     applyBus(b);
@@ -194,16 +212,25 @@
   const hearOn = b => b === prev || (S.hear && !!$('out').value && !$('monitor').checked);
   function applyBus(b) {
     if (!b) return;
-    const t = b.ctx.currentTime, clear = S.mode === 'clear';
+    const t = b.ctx.currentTime, m = S.mode, clear = m === 'clear', comp = m === 'comp';
     b.pads.gain.setTargetAtTime(S.vol / 100, t, .02);
     b.yt.gain.setTargetAtTime(S.ytVol / 100, t, .02);
     b.boost.gain.setTargetAtTime(xOf(S.boost), t, .02);
     b.ytBoost.gain.setTargetAtTime(xOf(S.ytBoost), t, .02);
-    // loud and clear: same chain as the mic (voice compressor, makeup, brick-wall limiter, soft knee), so 100,000x never cracks
-    b.comp.threshold.value = clear ? -26 : 0; b.comp.ratio.value = clear ? 5 : 1; b.comp.knee.value = clear ? 12 : 0;
+    b.bass.gain.setTargetAtTime(S.bass, t, .03);
+    b.mid.gain.setTargetAtTime(S.mid, t, .03);
+    b.treble.gain.setTargetAtTime(S.treble, t, .03);
+    // clear: compressor, makeup, brick-wall limiter, soft knee (100,000x never cracks); radio: heavy squash;
+    // soft: warm tanh drive; hard: flat clip at full scale (harsh)
+    b.comp.threshold.value = clear ? -26 : comp ? -30 : 0;
+    b.comp.ratio.value = clear ? 5 : comp ? 12 : 1;
+    b.comp.knee.value = clear ? 12 : comp ? 10 : 0;
+    b.comp.attack.value = clear ? .004 : .003; b.comp.release.value = clear ? .2 : .15;
     b.makeup.gain.setTargetAtTime(clear ? 2.4 : 1, t, .05);
-    b.lim.threshold.value = clear ? -3 : 0; b.lim.ratio.value = clear ? 20 : 1;
-    b.shaper.curve = clear ? SAFE : HARD;
+    b.lim.ratio.value = clear || comp ? 20 : 1;
+    b.lim.threshold.value = clear || comp ? -3 : 0;
+    b.shaper.curve = clear || comp ? SAFE : m === 'soft' ? SOFT : HARD;
+    b.shaper.oversample = clear || comp ? 'none' : '4x';
     b.hear.gain.setTargetAtTime(hearOn(b) ? 1 : 0, t, .02);
   }
   const applyAllBuses = () => { applyBus(bus); applyBus(prev); };
@@ -484,21 +511,26 @@
     $('ytBoost').value = S.ytBoost; $('ytBoostV').textContent = fmtX(S.ytBoost) + ' · +' + Math.round(S.ytBoost) + ' dB';
     $('ytVol').value = S.ytVol; $('ytVolV').textContent = S.ytVol + '%';
     $('bdMode').value = S.mode; $('duck').checked = S.duck; $('hear').checked = S.hear;
+    for (const k of ['bass', 'mid', 'treble']) { $('fx' + k).value = S[k]; $('fx' + k + 'V').textContent = (S[k] > 0 ? '+' : S[k] < 0 ? '−' : '') + Math.abs(S[k]) + ' dB'; }
+    document.querySelectorAll('[data-fx]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.fx === S.fx)));
     if (!$('ytUrl').value) $('ytUrl').value = S.ytUrl;
-    ['bdVol', 'bdBoost', 'ytVol', 'ytBoost'].forEach(id => paintRange($(id)));
+    ['bdVol', 'bdBoost', 'ytVol', 'ytBoost', 'fxbass', 'fxmid', 'fxtreble'].forEach(id => paintRange($(id)));
   }
-  const set = patch => { Object.assign(S, patch); save(); paintControls(); applyAllBuses(); };
-  $('bdVol').addEventListener('input', e => set({ vol: +e.target.value }));
+  // any hand change clears the highlighted preset, like on the mic
+  const set = (patch, keepFx) => { Object.assign(S, patch); if (!keepFx) S.fx = ''; save(); paintControls(); applyAllBuses(); };
+  $('bdVol').addEventListener('input', e => set({ vol: +e.target.value }, true));
   $('bdBoost').addEventListener('input', e => set({ boost: +e.target.value }));
-  $('ytVol').addEventListener('input', e => set({ ytVol: +e.target.value }));
+  $('ytVol').addEventListener('input', e => set({ ytVol: +e.target.value }, true));
   $('ytBoost').addEventListener('input', e => set({ ytBoost: +e.target.value }));
   // quick boost buttons: 10x .. 100,000x
   document.querySelectorAll('[data-bx]').forEach(btn => btn.addEventListener('click', () =>
     set({ [btn.dataset.bx]: Math.round(20 * Math.log10(+btn.dataset.x) * 10) / 10 })));
   $('bdMode').addEventListener('change', e => set({ mode: e.target.value }));
-  $('hear').addEventListener('change', e => set({ hear: e.target.checked }));
+  for (const k of ['bass', 'mid', 'treble']) $('fx' + k).addEventListener('input', e => set({ [k]: +e.target.value }));
+  document.querySelectorAll('[data-fx]').forEach(b => b.addEventListener('click', () => set({ ...FX_PRESETS[b.dataset.fx], fx: b.dataset.fx }, true)));
+  $('hear').addEventListener('change', e => set({ hear: e.target.checked }, true));
   $('duck').addEventListener('change', e => {
-    set({ duck: e.target.checked }); startDuck();
+    set({ duck: e.target.checked }, true); startDuck();
     if (S.duck && +$('gate').value <= -90) status('Turn on the noise gate above so the amp can tell when you talk.');
   });
   // the amp's own output and monitor settings decide whether you need to hear the mix separately

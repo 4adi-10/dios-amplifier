@@ -4,7 +4,7 @@ import { verifyKey, readCookie } from './lib/keys.js';
 
 export const config = {
   // everything except the key screen, the admin page, the key API and the app install files (icons, manifest, service worker)
-  matcher: ['/((?!api/|unlock\\.html|admin\\.html|favicon\\.ico|manifest\\.webmanifest|sw\\.js|pwa\\.js|icons/).*)']
+  matcher: ['/((?!api/|unlock\\.html|admin\\.html|favicon\\.ico|manifest\\.webmanifest|sw\\.js|pwa\\.js|icons/|intro/|intro\\.css|intro\\.js).*)']
 };
 
 export default async function middleware(request) {

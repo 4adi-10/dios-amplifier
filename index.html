@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="/intro.css">
+<script src="/intro.js"></script>
+<meta name="author" content="Aadi, DIOS Studioz">
+<meta name="copyright" content="&copy; 2026 DIOS Studioz. Fully made by Aadi.">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0d060b">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,6 +51,13 @@
 <link rel="stylesheet" href="board.css">
 </head>
 <body>
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro__bg"></div>
+  <video class="intro__v" id="introV" src="/intro/dios-intro.mp4" poster="/intro/dios-intro.jpg" muted autoplay playsinline preload="auto"></video>
+  <p class="intro__by">DIOS Studioz &middot; made by Aadi</p>
+  <button class="intro__skip" id="introSkip" type="button">Skip</button>
+</div>
+
 <!-- type: software (site-kind software)
      deal: hero collage, nav nav-centre, close close-word, footer footer-columns, rhythm space (the owner asked for liquid glass over one aurora, so the white band went),
      buttons arrow, mark stack, ground sky, palette plum-black-pink, type epilogue, radius round
@@ -247,7 +258,7 @@
             <button class="c-btn" type="button" id="ytPlay">Play / pause</button>
             <button class="c-btn" type="button" id="ytFwd">+10 s</button>
           </div>
-          <div class="c-knob"><label for="ytVol">Music volume <output id="ytVolV" for="ytVol">100%</output></label><input class="c-range" type="range" id="ytVol" min="0" max="200" step="1" value="100"></div>
+          <div class="c-knob"><label for="ytVol">Music volume <output id="ytVolV" for="ytVol">100%</output></label><input class="c-range" type="range" id="ytVol" min="0" max="500" step="1" value="100"></div>
           <div class="c-knob"><label for="ytBoost">Music boost <output id="ytBoostV" for="ytBoost">1x · +0 dB</output></label><input class="c-range" type="range" id="ytBoost" min="0" max="100" step="0.1" value="0"><div class="c-chips b-chips"><button type="button" data-bx="ytBoost" data-x="1">1x</button><button type="button" data-bx="ytBoost" data-x="10">10x</button><button type="button" data-bx="ytBoost" data-x="100">100x</button><button type="button" data-bx="ytBoost" data-x="1000">1000x</button><button type="button" data-bx="ytBoost" data-x="10000">10,000x</button><button type="button" data-bx="ytBoost" data-x="100000">100,000x</button></div></div>
           <div class="c-group">
             <label class="c-switch">Lower music while I talk <input type="checkbox" id="duck"></label>
@@ -264,12 +275,19 @@
             <div class="c-knob"><label for="bdVol">Sound volume <output id="bdVolV" for="bdVol">100%</output></label><input class="c-range" type="range" id="bdVol" min="0" max="200" step="1" value="100"></div>
             <div class="c-knob"><label for="bdBoost">Sound boost <output id="bdBoostV" for="bdBoost">1x · +0 dB</output></label><input class="c-range" type="range" id="bdBoost" min="0" max="100" step="0.1" value="0"><div class="c-chips b-chips"><button type="button" data-bx="boost" data-x="1">1x</button><button type="button" data-bx="boost" data-x="10">10x</button><button type="button" data-bx="boost" data-x="100">100x</button><button type="button" data-bx="boost" data-x="1000">1000x</button><button type="button" data-bx="boost" data-x="10000">10,000x</button><button type="button" data-bx="boost" data-x="100000">100,000x</button></div></div>
           </div>
+          <div class="b-fx">
+            <p class="c-label">Sound and music effects, same as the mic</p>
+            <div class="b-fxpresets"><button class="c-preset" type="button" data-fx="clean" aria-pressed="false"><b>Clean</b><span>1x · flat</span></button><button class="c-preset" type="button" data-fx="loud" aria-pressed="false"><b>Loud</b><span>10x · clear</span></button><button class="c-preset" type="button" data-fx="max" aria-pressed="false"><b>Max clear</b><span>1000x · clear</span></button><button class="c-preset" type="button" data-fx="bass" aria-pressed="false"><b>Bass boost</b><span>bass +15</span></button><button class="c-preset" type="button" data-fx="radio" aria-pressed="false"><b>Radio</b><span>compressor</span></button><button class="c-preset" type="button" data-fx="dist" aria-pressed="false"><b>Distorted</b><span>100,000x · harsh</span></button></div>
+            <div class="c-knobs b-eq"><div class="c-knob"><label for="fxbass">Bass <output id="fxbassV" for="fxbass">0 dB</output></label><input class="c-range" type="range" id="fxbass" min="-12" max="18" step="1" value="0"></div><div class="c-knob"><label for="fxmid">Presence <output id="fxmidV" for="fxmid">0 dB</output></label><input class="c-range" type="range" id="fxmid" min="-12" max="12" step="1" value="0"></div><div class="c-knob"><label for="fxtreble">Treble <output id="fxtrebleV" for="fxtreble">0 dB</output></label><input class="c-range" type="range" id="fxtreble" min="-12" max="12" step="1" value="0"></div></div>
+          </div>
           <div class="c-row2">
             <div class="c-group">
-              <label class="c-label" for="bdMode">Sound limiter (sounds and music)</label>
+              <label class="c-label" for="bdMode">Limiter (sounds and music)</label>
               <select class="c-select" id="bdMode">
                 <option value="clear">Loud and clear (no distortion)</option>
-                <option value="hard">Raw (distorted, ear-rape)</option>
+                <option value="comp">Radio compressor</option>
+                <option value="soft">Soft clip (warm drive)</option>
+                <option value="hard">Hard clip (harsh, ear-rape)</option>
               </select>
             </div>
             <p class="c-status" id="bdStatus">Press Start above to send sounds to Discord. Until then they play only for you.</p>
@@ -412,7 +430,7 @@
         <div class="span-2 footer__col"><h4>Help</h4><ul><li><a href="#questions">Questions</a></li><li><a href="/api/lock">Sign out</a></li></ul></div>
       </div>
       <div class="footer__legal">
-        <span>&copy; 2026 DIOS</span>
+        <span>&copy; 2026 DIOS Studioz. Fully made by Aadi. All rights reserved.</span>
         <span class="t-small muted">Product names and logos are trademarks of their owners</span>
       </div>
     </div>
