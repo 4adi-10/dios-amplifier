@@ -3,78 +3,84 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DIOS YouTube</title>
+<title>DIOS helper</title>
+<link rel="icon" type="image/png" href="/icons/favicon-64.png">
 <style>
 :root { color-scheme: dark; }
-html, body { margin: 0; height: 100%; background: #0d060b; color: #fff; font: 14px/1.4 "Epilogue", system-ui, sans-serif; }
-#p { position: fixed; left: 0; top: 0; width: 100%; height: calc(100% - 44px); border: 0; display: block; }
-.bar { position: fixed; left: 0; right: 0; bottom: 0; height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 0 14px; border-top: 1px solid rgb(255 255 255 / .1); color: #a89ca4; font-size: 13px; }
+html, body { margin: 0; height: 100%; background: #0d060b; color: #fff; font: 13px/1.4 "Epilogue", system-ui, sans-serif; overflow: hidden; }
+#p { position: fixed; left: 0; top: 0; width: 100%; height: calc(100% - 52px); border: 0; display: block; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; height: 52px; display: grid; align-content: center; gap: 2px; padding: 0 14px;
+  border-top: 1px solid rgb(255 255 255 / .1); color: #a89ca4; }
 .bar b { color: #ff488b; font-weight: 500; }
 .bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-a { color: #ff9ec2; white-space: nowrap; }
-.msg { position: fixed; left: 0; top: 0; right: 0; bottom: 44px; display: none; place-items: center; text-align: center; padding: 24px; background: #0d060b; }
-.msg[data-on] { display: grid; }
+#go { position: fixed; left: 0; top: 0; right: 0; bottom: 52px; display: none; place-items: center; z-index: 2; border: 0; cursor: pointer;
+  background: rgb(13 6 11 / .82); color: #fff; font: 500 16px/1.3 inherit; font-family: inherit; }
+#go[data-on] { display: grid; }
+#go i { display: block; font-style: normal; color: #ff488b; font-size: 34px; margin-bottom: 6px; }
 </style>
 </head>
 <body>
 <div id="p"></div>
-<div class="msg" id="msg"></div>
-<div class="bar"><span><b>DIOS</b> · share this tab from the amplifier to send its sound to Discord</span><a id="yt" href="#">Open on YouTube instead</a></div>
+<button id="go" type="button"><span><i>▶</i>Click once to start the sound</span></button>
+<div class="bar"><span><b>DIOS helper</b> · carries the video's sound to Discord</span><span id="t">Keep this open. You can minimize it.</span></div>
 <script>
-/* DIOS YouTube: the little player window. The amplifier shares this tab's sound and controls it over a BroadcastChannel.
-   If YouTube refuses to embed a video, "Open on YouTube instead" plays it in this same tab, so the share keeps working. */
+/* DIOS helper: plays the same YouTube video as the DIOS site, in sync, so its sound can be shared to Discord.
+   The site's player is the boss: it sends { v, t, playing } over a BroadcastChannel and this window follows. */
 (() => {
   const q = new URLSearchParams(location.search);
-  let v = (q.get('v') || '').replace(/[^\w-]/g, '').slice(0, 11), list = (q.get('list') || '').replace(/[^\w-]/g, '');
+  const clean = x => String(x || '').replace(/[^\w-]/g, '').slice(0, 11);
   const chan = 'BroadcastChannel' in window ? new BroadcastChannel('dios-yt') : null;
   const send = o => chan && chan.postMessage(Object.assign({ from: 'yt' }, o));
-  const link = document.getElementById('yt'), msg = document.getElementById('msg');
-  const ytUrl = () => 'https://www.youtube.com/watch?' + new URLSearchParams(Object.assign(v ? { v } : {}, list ? { list } : {}));
-  link.href = ytUrl();
-  let player = null;
+  const go = document.getElementById('go'), tEl = document.getElementById('t');
+  let player = null, want = null, curV = clean(q.get('v')), stuckSince = 0, stuck = false;
 
-  function report() {
-    if (!player || !player.getPlayerState) return;
-    const d = (player.getVideoData && player.getVideoData()) || {};
-    document.title = (d.title ? d.title + ' · ' : '') + 'DIOS YouTube';
-    send({ state: player.getPlayerState(), title: d.title || '' });
+  function setStuck(on) {
+    if (on === stuck) return;
+    stuck = on; go.toggleAttribute('data-on', on); send({ stuck: on });
   }
-  function fail(code) {
-    msg.textContent = '';
-    const p = document.createElement('p'); p.textContent = 'YouTube will not play this video inside the DIOS player.';
-    const a = document.createElement('a'); a.href = ytUrl(); a.textContent = 'Play it on YouTube in this tab';
-    msg.append(p, a); msg.dataset.on = '';
-    send({ error: code });
+  function follow() {
+    if (!player || !player.getPlayerState || !want) return;
+    const st = player.getPlayerState();
+    if (want.v && want.v !== curV) {
+      curV = want.v;
+      want.playing ? player.loadVideoById({ videoId: curV, startSeconds: want.t }) : player.cueVideoById({ videoId: curV, startSeconds: want.t });
+      return;
+    }
+    const target = want.t + (want.playing ? (Date.now() - want.at) / 1000 : 0);
+    const now = player.getCurrentTime() || 0;
+    if (Math.abs(now - target) > (want.playing ? 0.45 : 0.25) && st !== 3) player.seekTo(target, true);
+    if (want.playing && st !== 1 && st !== 3) player.playVideo();
+    if (!want.playing && (st === 1 || st === 3)) player.pauseVideo();
+    // the browser may hold back sound until this window is clicked once
+    if (want.playing && st !== 1 && st !== 3) { stuckSince = stuckSince || Date.now(); if (Date.now() - stuckSince > 2500) setStuck(true); }
+    else { stuckSince = 0; setStuck(false); }
   }
+  go.addEventListener('click', () => { if (player && player.playVideo) { player.unMute(); player.playVideo(); } setTimeout(follow, 300); });
 
   window.onYouTubeIframeAPIReady = () => {
-    const vars = { autoplay: 1, playsinline: 1, rel: 0 };
-    if (list) { vars.listType = 'playlist'; vars.list = list; }
     player = new YT.Player('p', {
-      videoId: v || undefined, playerVars: vars,
+      videoId: curV || undefined,
+      playerVars: { autoplay: 0, playsinline: 1, rel: 0, controls: 0, disablekb: 1, origin: location.origin },
       events: {
-        onReady: () => { player.playVideo(); report(); },
-        onStateChange: report,
-        onError: e => fail(e.data)
+        onReady: () => { player.unMute(); player.setVolume(100); send({ ready: true }); follow(); },
+        onStateChange: () => {
+          const d = (player.getVideoData && player.getVideoData()) || {};
+          if (d.title) { document.title = d.title + ' · DIOS helper'; tEl.textContent = d.title; }
+          follow();
+        },
+        onError: e => send({ error: e.data })
       }
     });
   };
-
   if (chan) chan.onmessage = e => {
     const m = e.data || {};
-    if (m.from === 'yt' || !player || !player.getPlayerState) return;
-    if (m.cmd === 'toggle') player.getPlayerState() === 1 ? player.pauseVideo() : player.playVideo();
-    else if (m.cmd === 'seek') player.seekTo(Math.max(0, player.getCurrentTime() + (+m.by || 0)), true);
-    else if (m.cmd === 'ping') report();
-    else if (m.cmd === 'load') {
-      v = String(m.v || '').replace(/[^\w-]/g, '').slice(0, 11); list = String(m.list || '').replace(/[^\w-]/g, '');
-      link.href = ytUrl(); delete msg.dataset.on;
-      if (list) player.loadPlaylist({ listType: 'playlist', list, index: 0 });
-      else if (v) player.loadVideoById(v);
-      history.replaceState(null, '', '?' + new URLSearchParams(Object.assign(v ? { v } : {}, list ? { list } : {})));
-    }
+    if (m.from === 'yt') return;
+    if (m.cmd === 'sync') { want = { v: clean(m.v), t: +m.t || 0, playing: !!m.playing, at: +m.at || Date.now() }; follow(); }
   };
+  // heartbeat: the site mutes its own player only while this window is alive, so you never hear the video twice
+  setInterval(() => send({ alive: true }), 800);
+  send({ alive: true });
+  addEventListener('pagehide', () => send({ closed: true }));
 
   const s = document.createElement('script');
   s.src = 'https://www.youtube.com/iframe_api';

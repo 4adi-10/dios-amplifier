@@ -233,12 +233,14 @@
           <div class="c-head"><p class="c-title">YouTube</p><span class="amp-chip" id="ytChip" data-state="off"><i></i><span id="ytChipText">Not sent</span></span></div>
           <div class="c-group">
             <label class="c-label" for="ytUrl">YouTube link or playlist</label>
-            <div class="b-url"><input class="c-select b-input" id="ytUrl" type="url" inputmode="url" placeholder="Paste a YouTube link" autocomplete="off"><button class="c-btn" type="button" id="ytOpen">Open</button></div>
+            <div class="b-url"><input class="c-select b-input" id="ytUrl" type="url" inputmode="url" placeholder="Paste a YouTube link" autocomplete="off"><button class="c-btn" type="button" id="ytOpen">Play</button></div>
+            <div class="b-frame" id="ytFrame" hidden><div id="ytPlayer"></div></div>
             <p class="b-now" id="ytNow">Nothing loaded yet.</p>
           </div>
           <div class="c-group">
             <button class="c-go" type="button" id="ytConnect">Send YouTube to Discord</button>
-            <p class="b-hint">In the share box pick the <b>DIOS YouTube</b> tab and keep <b>Also share tab audio</b> on. Works with any tab, like Spotify or SoundCloud.</p>
+            <p class="b-hint" id="ytHelper"></p>
+            <p class="b-hint">The video plays here. A small <b>DIOS helper</b> window carries its sound: in the share box pick that tab and keep <b>Also share tab audio</b> on, then minimize it.</p>
           </div>
           <div class="b-ctl">
             <button class="c-btn" type="button" id="ytBack">−10 s</button>

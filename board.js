@@ -294,14 +294,22 @@
     if (playing.size) raf = requestAnimationFrame(tick);
   }
 
-  /* ---------------- YouTube (any tab, really) ---------------- */
-  // The video plays in a small DIOS YouTube window; the browser's tab-share hands its sound to this page.
-  let ytStream = null, ytSrc = null, ytWin = null, ytTitle = '', ytState = -1;
+  /* ---------------- YouTube: the video plays here, the DIOS helper carries its sound ---------------- */
+  // Chrome will not let a page read the sound of an embedded YouTube video, and sharing this tab would feed
+  // Discord's sound back into itself. So the video plays in the site (muted while the helper is open), and a tiny
+  // helper window plays the same video in sync; the browser's tab share hands the helper's sound to the mix.
+  let ytStream = null, ytSrc = null, ytWin = null, helperSeen = -Infinity, helperStuck = false;
+  let player = null, apiP = null, cur = null, syncT = 0;
   const chan = 'BroadcastChannel' in window ? new BroadcastChannel('dios-yt') : null;
+  const helperAlive = () => performance.now() - helperSeen < 2500;
   if (chan) chan.onmessage = e => {
     const d = e.data || {}; if (d.from !== 'yt') return;
-    if ('title' in d) ytTitle = d.title; if ('state' in d) ytState = d.state;
-    if (d.error) err('YouTube will not play that video inside the player. Use "Open on YouTube instead" in the player window.');
+    if (d.closed) { helperSeen = -Infinity; helperStuck = false; applyMute(); paintYT(); return; }
+    const was = helperAlive();
+    helperSeen = performance.now();
+    if ('stuck' in d) helperStuck = !!d.stuck;
+    if (d.ready || !was) pushSync();
+    if (d.error) err('YouTube will not play this video in the helper. Try another video.');
     paintYT();
   };
   function parseYT(u) {
@@ -319,15 +327,60 @@
       return out;
     } catch (e) { return null; }
   }
-  function openYT() {
+  const api = () => apiP || (apiP = new Promise(res => {
+    if (window.YT && window.YT.Player) return res();
+    const prevReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prevReady) prevReady(); res(); };
+    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s);
+  }));
+  const ready = () => player && player.getPlayerState;
+  const vidNow = () => (ready() && player.getVideoData && player.getVideoData().video_id) || (cur && cur.v) || '';
+
+  function openHelper() {
+    const q = new URLSearchParams({ helper: '1' }); const v = vidNow(); if (v) q.set('v', v);
+    ytWin = window.open('yt.html?' + q, 'dios-yt', 'popup,width=440,height=330');
+    if (!ytWin) { err('The browser blocked the helper window. Allow pop-ups for this site, then try again.'); return false; }
+    try { window.focus(); } catch (e) {}
+    return true;
+  }
+  function loadYT() {
     const id = parseYT($('ytUrl').value);
     if (!id) { err('That does not look like a YouTube link.'); return; }
-    err(); S.ytUrl = $('ytUrl').value.trim(); save();
-    if (ytWin && !ytWin.closed && chan) { chan.postMessage({ cmd: 'load', ...id }); ytWin.focus(); return; }
-    ytWin = window.open('yt.html?' + new URLSearchParams(id), 'dios-yt', 'popup,width=760,height=480');
-    if (!ytWin) { err('The browser blocked the player window. Allow pop-ups for this site, then press Open again.'); return; }
-    status(ytStream ? 'Loading the new video.' : 'Player open. Now press "Send YouTube to Discord" and pick the DIOS YouTube tab.');
+    err(); S.ytUrl = $('ytUrl').value.trim(); save(); cur = id;
+    // the helper must open inside this click, or the pop-up blocker stops it
+    if (!helperAlive() && !(ytWin && !ytWin.closed)) openHelper();
+    $('ytFrame').hidden = false;
+    api().then(() => {
+      if (!player) {
+        const vars = { autoplay: 1, playsinline: 1, rel: 0, origin: location.origin };
+        if (id.list) { vars.listType = 'playlist'; vars.list = id.list; }
+        player = new YT.Player('ytPlayer', {
+          videoId: id.v || undefined, playerVars: vars,
+          events: {
+            onReady: () => { applyMute(); player.playVideo(); pushSync(); paintYT(); },
+            onStateChange: () => { applyMute(); pushSync(); paintYT(); },
+            onError: e => err(e.data === 101 || e.data === 150 ? 'The owner of this video does not allow it outside YouTube. Try another one.' : 'YouTube could not play this video.')
+          }
+        });
+      } else if (id.list) player.loadPlaylist({ listType: 'playlist', list: id.list, index: 0 });
+      else player.loadVideoById(id.v);
+    });
+    status(ytStream ? 'Loading the new video.' : 'Video loading. Press "Send YouTube to Discord" and pick the DIOS helper tab.');
   }
+  // only one of the two players is ever heard: the helper when it is open, this one when it is not
+  function applyMute() {
+    if (!ready()) return;
+    const quiet = helperAlive() || ytStream;
+    if (quiet && !player.isMuted()) player.mute();
+    else if (!quiet && player.isMuted()) player.unMute();
+  }
+  function pushSync() {
+    if (!chan || !ready()) return;
+    const st = player.getPlayerState();
+    chan.postMessage({ cmd: 'sync', v: vidNow(), t: player.getCurrentTime() || 0, playing: st === 1 || st === 3, at: Date.now() });
+  }
+  function syncLoop() { pushSync(); applyMute(); paintYT(); syncT = setTimeout(syncLoop, 700); }
+
   function hookYT() {
     if (ytSrc) { try { ytSrc.disconnect(); } catch (e) {} ytSrc = null; }
     if (!ytStream) return;
@@ -338,6 +391,11 @@
   async function connectYT() {
     err();
     if (ytStream) { dropYT(); return; }
+    if (!cur) { err('Paste a YouTube link and press Play first.'); return; }
+    if (!helperAlive() && !(ytWin && !ytWin.closed)) {
+      if (openHelper()) status('Helper opened. Press "Send YouTube to Discord" again and pick the DIOS helper tab.');
+      return;
+    }
     const md = navigator.mediaDevices;
     if (!md || !md.getDisplayMedia) { err('This browser cannot share tab audio. Use Chrome or Edge on a computer.'); return; }
     try {
@@ -348,34 +406,41 @@
       });
       if (!s.getAudioTracks().length) {
         s.getTracks().forEach(t => t.stop());
-        err('No sound came through. Share the DIOS YouTube tab (not a window or screen) and keep "Also share tab audio" on.');
+        err('No sound came through. Pick the DIOS helper tab (not a window or screen) and keep "Also share tab audio" on.');
         return;
       }
       s.getVideoTracks().forEach(t => { t.enabled = false; });   // only the sound is used
       ytStream = s;
       s.getAudioTracks()[0].addEventListener('ended', dropYT);
-      s.getVideoTracks().forEach(t => t.addEventListener('ended', () => { if (ytStream === s && !s.getAudioTracks().some(a => a.readyState === 'live')) dropYT(); }));
-      hookYT();
-      if (chan) chan.postMessage({ cmd: 'ping' });
-      status(bus ? 'YouTube is going to Discord with your mic.' : 'YouTube is connected. Press Start above to send it to Discord.');
+      hookYT(); applyMute(); pushSync();
+      status(bus ? 'Live. The video plays here and its sound goes to Discord with your mic.' : 'YouTube is connected. Press Start above to send it to Discord.');
     } catch (e) {
-      if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') err('Could not share the tab: ' + e.message);
+      if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') err('Could not share the helper tab: ' + e.message);
     }
     paintYT();
   }
   function dropYT() {
     if (ytSrc) { try { ytSrc.disconnect(); } catch (e) {} ytSrc = null; }
     if (ytStream) ytStream.getTracks().forEach(t => t.stop());
-    ytStream = null; paintYT();
+    ytStream = null; applyMute(); paintYT();
   }
-  const ytCmd = m => { if (!chan) { err('This browser cannot control the player. Use the controls in its window.'); return; } chan.postMessage(m); };
+  const ytToggle = () => { if (!ready()) return; const st = player.getPlayerState(); st === 1 || st === 3 ? player.pauseVideo() : player.playVideo(); };
+  const ytSeek = by => { if (!ready()) return; player.seekTo(Math.max(0, player.getCurrentTime() + by), true); setTimeout(pushSync, 50); };
   function paintYT() {
     const chip = $('ytChip'), on = !!ytStream;
     chip.dataset.state = on ? (bus ? 'live' : 'muted') : 'off';
     $('ytChipText').textContent = on ? (bus ? 'To Discord' : 'Only you') : 'Not sent';
     $('ytConnect').textContent = on ? 'Stop sending YouTube' : 'Send YouTube to Discord';
     $('ytConnect').toggleAttribute('data-live', on);
-    $('ytNow').textContent = ytTitle ? (ytState === 1 ? 'Playing: ' : ytState === 2 ? 'Paused: ' : '') + ytTitle : 'Nothing loaded yet.';
+    const d = ready() && player.getVideoData ? player.getVideoData() : null, st = ready() ? player.getPlayerState() : -1;
+    const title = d && d.title;
+    $('ytNow').textContent = !title ? 'Nothing loaded yet.'
+      : (st === 1 ? 'Playing: ' : st === 2 ? 'Paused: ' : '') + title;
+    const h = $('ytHelper');
+    h.textContent = helperStuck ? 'Click the DIOS helper window once so its sound can start.'
+      : helperAlive() ? (on ? 'Helper sending sound. You can minimize it.' : 'Helper open. Now send it to Discord.')
+      : cur ? 'Helper closed. Send to Discord opens it again.' : '';
+    h.dataset.warn = helperStuck ? '' : null; if (!helperStuck) delete h.dataset.warn;
   }
 
   // lower the music while the noise gate hears you talk
@@ -440,12 +505,12 @@
   $('out').addEventListener('change', applyAllBuses);
   $('monitor').addEventListener('change', applyAllBuses);
   $('bdStop').addEventListener('click', stopAll);
-  $('ytOpen').addEventListener('click', openYT);
-  $('ytUrl').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); openYT(); } });
+  $('ytOpen').addEventListener('click', loadYT);
+  $('ytUrl').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); loadYT(); } });
   $('ytConnect').addEventListener('click', connectYT);
-  $('ytPlay').addEventListener('click', () => ytCmd({ cmd: 'toggle' }));
-  $('ytBack').addEventListener('click', () => ytCmd({ cmd: 'seek', by: -10 }));
-  $('ytFwd').addEventListener('click', () => ytCmd({ cmd: 'seek', by: 10 }));
+  $('ytPlay').addEventListener('click', ytToggle);
+  $('ytBack').addEventListener('click', () => ytSeek(-10));
+  $('ytFwd').addEventListener('click', () => ytSeek(10));
 
   // drop audio files anywhere on the board
   const con = $('boardConsole');
@@ -475,7 +540,7 @@
     });
   }
 
-  paintControls(); renderPads(); paintYT(); loadCustom();
+  paintControls(); renderPads(); paintYT(); loadCustom(); syncLoop();
   if (window.DIOS && window.DIOS.A) dispatchEvent(new Event('dios:start'));
   // decode the built-ins in the background so the first press is instant and lengths show
   const warm = () => pads.forEach(p => bufferFor(p).catch(() => {}));
