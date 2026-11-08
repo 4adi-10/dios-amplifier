@@ -3,8 +3,8 @@ import { next } from '@vercel/functions/middleware';
 import { verifyKey, readCookie } from './lib/keys.js';
 
 export const config = {
-  // everything except the key screen, the admin page and the key API
-  matcher: ['/((?!api/|unlock\\.html|admin\\.html|favicon\\.ico).*)']
+  // everything except the key screen, the admin page, the key API and the app install files (icons, manifest, service worker)
+  matcher: ['/((?!api/|unlock\\.html|admin\\.html|favicon\\.ico|manifest\\.webmanifest|sw\\.js|pwa\\.js|icons/).*)']
 };
 
 export default async function middleware(request) {

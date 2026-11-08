@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0d060b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DIOS Amp">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icons/favicon-64.png">
 <title>DIOS Amplifier: mic booster for Discord voice chat</title>
 <meta name="description" content="DIOS Amplifier boosts your microphone up to 100,000x with a noise gate, EQ and limiter, and sends it to Discord through VB-Cable or the Chrome extension.">
 <meta name="site-kind" content="software">
@@ -78,6 +86,7 @@
       <div class="nav__item"><a class="nav__link" href="#questions">Questions</a></div>
     </nav>
     <div class="nav__actions">
+      <button class="btn btn--secondary" type="button" data-install hidden>Install app</button>
       <a class="btn btn--primary" href="#amp">Open the amplifier</a>
     </div>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
@@ -95,7 +104,9 @@
         <div class="btn-row">
           <a class="btn btn--primary" href="#amp">Open the amplifier<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
           <a class="btn btn--secondary" href="#extension">Get the extension</a>
+          <button class="btn btn--secondary" type="button" data-install hidden>Install the app</button>
         </div>
+        <p class="hero__proof" id="installHint"></p>
         <p class="hero__proof">Works with the Discord desktop app and Discord in Chrome.</p>
       </div>
       <div class="hero__art amp-ui span-6 start-7" role="img" aria-label="The DIOS Amplifier window boosting a quiet microphone signal to 100,000x, with its noise gate and bass settings">
@@ -412,5 +423,6 @@
 <script type="module" src="assets/diagrams/mount.js"></script>
 <script src="amp.js"></script>
 <script src="board.js"></script>
+<script src="/pwa.js"></script>
 </body>
 </html>
