@@ -76,3 +76,9 @@
 .b-eq { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 1279px) { .b-fxpresets { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 639px) { .b-fxpresets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .b-eq { grid-template-columns: minmax(0, 1fr); } }
+/* DIOS Studioz logo loop in the hero */
+.dios-loop { position: relative; margin: 0 0 var(--s-5, 24px); width: 100%; max-width: 440px; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden;
+  border: 1px solid rgb(255 255 255 / .16); box-shadow: 0 30px 80px -30px rgb(160 60 255 / .55), inset 0 1px 0 rgb(255 255 255 / .2); background: #0d060b; }
+.dios-loop video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.dios-loop figcaption { position: absolute; left: 12px; bottom: 10px; font: 500 11px/1 var(--font-mono, monospace); letter-spacing: .08em; text-transform: uppercase;
+  color: rgb(255 255 255 / .75); text-shadow: 0 1px 6px #000; }

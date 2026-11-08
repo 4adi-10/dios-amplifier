@@ -3,8 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="stylesheet" href="/intro.css">
-<script src="/intro.js"></script>
 <meta name="author" content="Aadi, DIOS Studioz">
 <meta name="copyright" content="&copy; 2026 DIOS Studioz. Fully made by Aadi.">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -51,12 +49,6 @@
 <link rel="stylesheet" href="board.css">
 </head>
 <body>
-<div class="intro" id="intro" aria-hidden="true">
-  <div class="intro__bg"></div>
-  <video class="intro__v" id="introV" src="/intro/dios-intro.mp4" poster="/intro/dios-intro.jpg" muted autoplay playsinline preload="auto"></video>
-  <p class="intro__by">DIOS Studioz &middot; made by Aadi</p>
-  <button class="intro__skip" id="introSkip" type="button">Skip</button>
-</div>
 
 <!-- type: software (site-kind software)
      deal: hero collage, nav nav-centre, close close-word, footer footer-columns, rhythm space (the owner asked for liquid glass over one aurora, so the white band went),
@@ -110,6 +102,10 @@
   <section class="hero hero--collage" aria-labelledby="hero-h">
     <div class="wrap"><div class="hero-text grid hero__grid">
       <div class="hero__text span-5">
+        <figure class="dios-loop" aria-label="DIOS Studioz logo animation">
+          <video id="diosLoop" src="/intro/dios-intro.mp4" poster="/intro/dios-intro.jpg" muted autoplay loop playsinline preload="metadata" disablepictureinpicture></video>
+          <figcaption>DIOS Studioz</figcaption>
+        </figure>
         <h1 id="hero-h">Mic booster for Discord voice chat</h1>
         <p class="hero__lead">DIOS Amplifier raises your microphone up to 100,000x (+100 dB), and a compressor and limiter keep every word clear instead of distorted. Free, in Chrome or Edge.</p>
         <div class="btn-row">
@@ -443,6 +439,16 @@
 <script type="module" src="assets/diagrams/mount.js"></script>
 <script src="amp.js"></script>
 <script src="board.js"></script>
+<script>
+/* the DIOS logo loops like a GIF: muted, no controls, paused when off screen or when motion is reduced */
+(() => {
+  const v = document.getElementById('diosLoop'); if (!v) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { v.removeAttribute('autoplay'); v.pause(); return; }
+  const play = () => v.play().catch(() => {});
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? play() : v.pause())).observe(v);
+  else play();
+})();
+</script>
 <script src="/pwa.js"></script>
 </body>
 </html>
