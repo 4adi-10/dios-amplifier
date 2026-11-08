@@ -6,12 +6,15 @@
   const $ = id => document.getElementById(id);
   if (!$('pads')) return;
   const KEY = 'dios-board-v1';
-  const DEF = { vol: 100, boost: 0, mode: 'clear', ytVol: 100, duck: false, hear: true, ytUrl: '' };
+  const DEF = { vol: 100, boost: 0, mode: 'clear', ytVol: 100, ytBoost: 0, duck: false, hear: true, ytUrl: '' };
   let S = { ...DEF };
   try { S = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
   const status = t => { $('bdStatus').textContent = t; };
   const err = t => { $('bdErr').textContent = t || ''; };
+  // boosts are stored in dB, 0..100 (1x..100,000x), the same scale as the mic gain
+  const xOf = db => Math.pow(10, db / 20);
+  const fmtX = db => { const g = xOf(db); return (g >= 100 ? Math.round(g).toLocaleString('en') : g.toFixed(1).replace(/\.0$/, '')) + 'x'; };
   const fmtT = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
 
   /* ---------------- built-in sounds (synthesised, so nothing to download) ---------------- */
@@ -157,9 +160,9 @@
   }
 
   /* ---------------- engine ---------------- */
-  // pads ─┐
-  //       ├─ boost ─ limiter ─ clip ─ out ─┬─ amp output (cable, recorder, monitor) + scope
-  // yt ─ duck ┘                            └─ hear (your speakers, only when the amp output is the cable)
+  // pads ─ boost ─────┐
+  //                   ├─ comp ─ makeup ─ limiter ─ clip ─ out ─┬─ amp output (cable, recorder, monitor) + scope
+  // yt ─ duck ─ ytBoost ┘                                     └─ hear (your speakers, only when the amp output is the cable)
   const curve = hard => {
     const n = 4096, c = new Float32Array(n);
     for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1, a = Math.abs(x); c[i] = hard || a < .8 ? x : Math.sign(x) * (.8 + .17 * Math.tanh((a - .8) / .17)); }
@@ -169,11 +172,14 @@
   let A = null, bus = null, prev = null;
 
   function makeBus(ctx, outs) {
-    const b = { ctx, pads: ctx.createGain(), yt: ctx.createGain(), duck: ctx.createGain(), boost: ctx.createGain(),
+    const b = { ctx, pads: ctx.createGain(), yt: ctx.createGain(), duck: ctx.createGain(), boost: ctx.createGain(), ytBoost: ctx.createGain(),
+      comp: ctx.createDynamicsCompressor(), makeup: ctx.createGain(),
       lim: ctx.createDynamicsCompressor(), shaper: ctx.createWaveShaper(), out: ctx.createGain(), hear: ctx.createGain() };
-    b.lim.knee.value = 0; b.lim.attack.value = .002; b.lim.release.value = .08;
-    b.yt.connect(b.duck).connect(b.boost); b.pads.connect(b.boost);
-    b.boost.connect(b.lim).connect(b.shaper).connect(b.out);
+    b.comp.attack.value = .004; b.comp.release.value = .2;
+    b.lim.knee.value = 0; b.lim.attack.value = .001; b.lim.release.value = .06;
+    b.pads.connect(b.boost).connect(b.comp);
+    b.yt.connect(b.duck).connect(b.ytBoost).connect(b.comp);
+    b.comp.connect(b.makeup).connect(b.lim).connect(b.shaper).connect(b.out);
     outs.forEach(o => b.out.connect(o));
     b.out.connect(b.hear).connect(ctx.destination);
     applyBus(b);
@@ -191,7 +197,11 @@
     const t = b.ctx.currentTime, clear = S.mode === 'clear';
     b.pads.gain.setTargetAtTime(S.vol / 100, t, .02);
     b.yt.gain.setTargetAtTime(S.ytVol / 100, t, .02);
-    b.boost.gain.setTargetAtTime(Math.pow(10, S.boost / 20), t, .02);
+    b.boost.gain.setTargetAtTime(xOf(S.boost), t, .02);
+    b.ytBoost.gain.setTargetAtTime(xOf(S.ytBoost), t, .02);
+    // loud and clear: same chain as the mic (voice compressor, makeup, brick-wall limiter, soft knee), so 100,000x never cracks
+    b.comp.threshold.value = clear ? -26 : 0; b.comp.ratio.value = clear ? 5 : 1; b.comp.knee.value = clear ? 12 : 0;
+    b.makeup.gain.setTargetAtTime(clear ? 2.4 : 1, t, .05);
     b.lim.threshold.value = clear ? -3 : 0; b.lim.ratio.value = clear ? 20 : 1;
     b.shaper.curve = clear ? SAFE : HARD;
     b.hear.gain.setTargetAtTime(hearOn(b) ? 1 : 0, t, .02);
@@ -383,7 +393,14 @@
   /* ---------------- amp start / stop ---------------- */
   addEventListener('dios:start', () => {
     A = window.DIOS && window.DIOS.A; if (!A) return;
-    bus = makeBus(A.ctx, [A.dest, A.post]);
+    // a final limiter on the whole mix: mic and sounds are each limited, but their sum could still pass full scale
+    const mix = A.ctx.createGain(), mlim = A.ctx.createDynamicsCompressor(), mclip = A.ctx.createWaveShaper();
+    mlim.threshold.value = -1.5; mlim.knee.value = 0; mlim.ratio.value = 20; mlim.attack.value = .001; mlim.release.value = .05;
+    mclip.curve = SAFE;
+    try { A.master.disconnect(A.dest); A.master.disconnect(A.post); } catch (e) {}
+    A.master.connect(mix); mix.connect(mlim).connect(mclip);
+    mclip.connect(A.dest); mclip.connect(A.post);
+    bus = makeBus(A.ctx, [mix]);
     hookYT(); paintYT(); startDuck();
     status('Live. Sounds and YouTube go to Discord with your mic.');
   });
@@ -398,16 +415,21 @@
   const paintRange = r => r.style.setProperty('--fill', ((r.value - r.min) / (r.max - r.min) * 100) + '%');
   function paintControls() {
     $('bdVol').value = S.vol; $('bdVolV').textContent = S.vol + '%';
-    $('bdBoost').value = S.boost; $('bdBoostV').textContent = '+' + S.boost + ' dB';
+    $('bdBoost').value = S.boost; $('bdBoostV').textContent = fmtX(S.boost) + ' · +' + Math.round(S.boost) + ' dB';
+    $('ytBoost').value = S.ytBoost; $('ytBoostV').textContent = fmtX(S.ytBoost) + ' · +' + Math.round(S.ytBoost) + ' dB';
     $('ytVol').value = S.ytVol; $('ytVolV').textContent = S.ytVol + '%';
     $('bdMode').value = S.mode; $('duck').checked = S.duck; $('hear').checked = S.hear;
     if (!$('ytUrl').value) $('ytUrl').value = S.ytUrl;
-    ['bdVol', 'bdBoost', 'ytVol'].forEach(id => paintRange($(id)));
+    ['bdVol', 'bdBoost', 'ytVol', 'ytBoost'].forEach(id => paintRange($(id)));
   }
   const set = patch => { Object.assign(S, patch); save(); paintControls(); applyAllBuses(); };
   $('bdVol').addEventListener('input', e => set({ vol: +e.target.value }));
   $('bdBoost').addEventListener('input', e => set({ boost: +e.target.value }));
   $('ytVol').addEventListener('input', e => set({ ytVol: +e.target.value }));
+  $('ytBoost').addEventListener('input', e => set({ ytBoost: +e.target.value }));
+  // quick boost buttons: 10x .. 100,000x
+  document.querySelectorAll('[data-bx]').forEach(btn => btn.addEventListener('click', () =>
+    set({ [btn.dataset.bx]: Math.round(20 * Math.log10(+btn.dataset.x) * 10) / 10 })));
   $('bdMode').addEventListener('change', e => set({ mode: e.target.value }));
   $('hear').addEventListener('change', e => set({ hear: e.target.checked }));
   $('duck').addEventListener('change', e => {
