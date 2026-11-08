@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DIOS YouTube</title>
+<style>
+:root { color-scheme: dark; }
+html, body { margin: 0; height: 100%; background: #0d060b; color: #fff; font: 14px/1.4 "Epilogue", system-ui, sans-serif; }
+#p { position: fixed; left: 0; top: 0; width: 100%; height: calc(100% - 44px); border: 0; display: block; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 14px; border-top: 1px solid rgb(255 255 255 / .1); color: #a89ca4; font-size: 13px; }
+.bar b { color: #ff488b; font-weight: 500; }
+.bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+a { color: #ff9ec2; white-space: nowrap; }
+.msg { position: fixed; left: 0; top: 0; right: 0; bottom: 44px; display: none; place-items: center; text-align: center; padding: 24px; background: #0d060b; }
+.msg[data-on] { display: grid; }
+</style>
+</head>
+<body>
+<div id="p"></div>
+<div class="msg" id="msg"></div>
+<div class="bar"><span><b>DIOS</b> · share this tab from the amplifier to send its sound to Discord</span><a id="yt" href="#">Open on YouTube instead</a></div>
+<script>
+/* DIOS YouTube: the little player window. The amplifier shares this tab's sound and controls it over a BroadcastChannel.
+   If YouTube refuses to embed a video, "Open on YouTube instead" plays it in this same tab, so the share keeps working. */
+(() => {
+  const q = new URLSearchParams(location.search);
+  let v = (q.get('v') || '').replace(/[^\w-]/g, '').slice(0, 11), list = (q.get('list') || '').replace(/[^\w-]/g, '');
+  const chan = 'BroadcastChannel' in window ? new BroadcastChannel('dios-yt') : null;
+  const send = o => chan && chan.postMessage(Object.assign({ from: 'yt' }, o));
+  const link = document.getElementById('yt'), msg = document.getElementById('msg');
+  const ytUrl = () => 'https://www.youtube.com/watch?' + new URLSearchParams(Object.assign(v ? { v } : {}, list ? { list } : {}));
+  link.href = ytUrl();
+  let player = null;
+
+  function report() {
+    if (!player || !player.getPlayerState) return;
+    const d = (player.getVideoData && player.getVideoData()) || {};
+    document.title = (d.title ? d.title + ' · ' : '') + 'DIOS YouTube';
+    send({ state: player.getPlayerState(), title: d.title || '' });
+  }
+  function fail(code) {
+    msg.textContent = '';
+    const p = document.createElement('p'); p.textContent = 'YouTube will not play this video inside the DIOS player.';
+    const a = document.createElement('a'); a.href = ytUrl(); a.textContent = 'Play it on YouTube in this tab';
+    msg.append(p, a); msg.dataset.on = '';
+    send({ error: code });
+  }
+
+  window.onYouTubeIframeAPIReady = () => {
+    const vars = { autoplay: 1, playsinline: 1, rel: 0 };
+    if (list) { vars.listType = 'playlist'; vars.list = list; }
+    player = new YT.Player('p', {
+      videoId: v || undefined, playerVars: vars,
+      events: {
+        onReady: () => { player.playVideo(); report(); },
+        onStateChange: report,
+        onError: e => fail(e.data)
+      }
+    });
+  };
+
+  if (chan) chan.onmessage = e => {
+    const m = e.data || {};
+    if (m.from === 'yt' || !player || !player.getPlayerState) return;
+    if (m.cmd === 'toggle') player.getPlayerState() === 1 ? player.pauseVideo() : player.playVideo();
+    else if (m.cmd === 'seek') player.seekTo(Math.max(0, player.getCurrentTime() + (+m.by || 0)), true);
+    else if (m.cmd === 'ping') report();
+    else if (m.cmd === 'load') {
+      v = String(m.v || '').replace(/[^\w-]/g, '').slice(0, 11); list = String(m.list || '').replace(/[^\w-]/g, '');
+      link.href = ytUrl(); delete msg.dataset.on;
+      if (list) player.loadPlaylist({ listType: 'playlist', list, index: 0 });
+      else if (v) player.loadVideoById(v);
+      history.replaceState(null, '', '?' + new URLSearchParams(Object.assign(v ? { v } : {}, list ? { list } : {})));
+    }
+  };
+
+  const s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>

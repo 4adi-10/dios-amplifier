@@ -36,6 +36,7 @@
 <script src="assets/backgrounds/backgrounds.js"></script>
 <link rel="stylesheet" href="amp.css">
 <link rel="stylesheet" href="glass.css">
+<link rel="stylesheet" href="board.css">
 </head>
 <body>
 <!-- type: software (site-kind software)
@@ -48,6 +49,7 @@
     <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>DIOS Amplifier</a>
     <nav class="nav__links" aria-label="Main">
       <div class="nav__item"><a class="nav__link" href="#amp">Amplifier</a></div>
+      <div class="nav__item"><a class="nav__link" href="#board">Soundboard</a></div>
       <div class="nav__item">
         <a class="nav__link" href="#features">Features <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         <div class="nav__menu">
@@ -207,6 +209,63 @@
     </div>
   </section>
 
+
+  <!-- SOUNDBOARD: sounds and YouTube mix into the amp's output, so Discord hears them with the boosted mic. -->
+  <section class="section" id="board" aria-labelledby="board-h" style="--h: 2">
+    <div class="wrap">
+      <div class="grid">
+        <h2 id="board-h" class="span-5">Soundboard and YouTube, on your mic</h2>
+        <p class="span-6 start-7 muted t-lead">Sounds and music mix into the same boosted output Discord hears, right alongside your voice. Press Start above, then hit a pad or share a YouTube video.</p>
+      </div>
+      <div class="console lg ui amp-ui" id="boardConsole">
+        <div class="console__pane b-rack">
+          <div class="c-head"><p class="c-title">YouTube</p><span class="amp-chip" id="ytChip" data-state="off"><i></i><span id="ytChipText">Not sent</span></span></div>
+          <div class="c-group">
+            <label class="c-label" for="ytUrl">YouTube link or playlist</label>
+            <div class="b-url"><input class="c-select b-input" id="ytUrl" type="url" inputmode="url" placeholder="Paste a YouTube link" autocomplete="off"><button class="c-btn" type="button" id="ytOpen">Open</button></div>
+            <p class="b-now" id="ytNow">Nothing loaded yet.</p>
+          </div>
+          <div class="c-group">
+            <button class="c-go" type="button" id="ytConnect">Send YouTube to Discord</button>
+            <p class="b-hint">In the share box pick the <b>DIOS YouTube</b> tab and keep <b>Also share tab audio</b> on. Works with any tab, like Spotify or SoundCloud.</p>
+          </div>
+          <div class="b-ctl">
+            <button class="c-btn" type="button" id="ytBack">−10 s</button>
+            <button class="c-btn" type="button" id="ytPlay">Play / pause</button>
+            <button class="c-btn" type="button" id="ytFwd">+10 s</button>
+          </div>
+          <div class="c-knob"><label for="ytVol">Music volume <output id="ytVolV" for="ytVol">100%</output></label><input class="c-range" type="range" id="ytVol" min="0" max="200" step="1" value="100"></div>
+          <div class="c-group">
+            <label class="c-switch">Lower music while I talk <input type="checkbox" id="duck"></label>
+            <label class="c-switch">Hear sounds and music myself <input type="checkbox" id="hear" checked></label>
+          </div>
+        </div>
+        <div class="console__pane">
+          <div class="c-top">
+            <div class="c-read"><b>Soundboard</b><span>Keys 1 to 0 play pads · Esc stops all · Shift-click layers</span></div>
+            <button class="c-btn" type="button" id="bdStop" disabled>Stop all</button>
+          </div>
+          <div class="b-pads" id="pads"></div>
+          <div class="c-knobs b-knobs">
+            <div class="c-knob"><label for="bdVol">Sound volume <output id="bdVolV" for="bdVol">100%</output></label><input class="c-range" type="range" id="bdVol" min="0" max="200" step="1" value="100"></div>
+            <div class="c-knob"><label for="bdBoost">Sound boost <output id="bdBoostV" for="bdBoost">+0 dB</output></label><input class="c-range" type="range" id="bdBoost" min="0" max="60" step="1" value="0"></div>
+          </div>
+          <div class="c-row2">
+            <div class="c-group">
+              <label class="c-label" for="bdMode">Sound limiter (sounds and music)</label>
+              <select class="c-select" id="bdMode">
+                <option value="clear">Loud and clear (no distortion)</option>
+                <option value="hard">Raw (distorted, ear-rape)</option>
+              </select>
+            </div>
+            <p class="c-status" id="bdStatus">Press Start above to send sounds to Discord. Until then they play only for you.</p>
+          </div>
+          <p class="c-err" id="bdErr" role="alert"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="section feat" id="features" aria-labelledby="features-h" style="--hm: 2">
     <div class="wrap">
       <div class="section-head">
@@ -334,7 +393,7 @@
           <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>DIOS Amplifier</a>
           <p class="footer__lede">A free mic booster for Discord voice chat.</p>
         </div>
-        <div class="span-2 footer__col"><h4>Amplifier</h4><ul><li><a href="#amp">Console</a></li><li><a href="#features">Features</a></li></ul></div>
+        <div class="span-2 footer__col"><h4>Amplifier</h4><ul><li><a href="#amp">Console</a></li><li><a href="#board">Soundboard</a></li><li><a href="#features">Features</a></li></ul></div>
         <div class="span-2 footer__col"><h4>Setup</h4><ul><li><a href="#setup">VB-Cable</a></li><li><a href="#extension">Extension</a></li></ul></div>
         <div class="span-2 footer__col"><h4>Help</h4><ul><li><a href="#questions">Questions</a></li><li><a href="/api/lock">Sign out</a></li></ul></div>
       </div>
@@ -351,5 +410,6 @@
 <script type="module" src="assets/layout/layout.js"></script>
 <script type="module" src="assets/diagrams/mount.js"></script>
 <script src="amp.js"></script>
+<script src="board.js"></script>
 </body>
 </html>

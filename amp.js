@@ -44,6 +44,7 @@
   //     -> gain -> gate -> bass -> mid -> treble -> comp -> shaper -> master (mute/ptt) -> analyser
   //                                                                   -> dest (cable / recorder) + monitor
   let A = null;
+  window.DIOS = { get A() { return A; } };   // the soundboard (board.js) mixes into this graph
   let stream = null, src = null, raf = 0, muted = false, talking = false;
   let peakHold = 0, peakAt = 0, clips = 0, clipLatch = false, rec = null, recUrl = '';
   const outEl = new Audio(); const monEl = new Audio();
@@ -173,6 +174,7 @@
       $('rec').disabled = false;
       $('status').textContent = S.out ? 'Live. Sending to the selected output.' : 'Live on your default output. Pick CABLE Input to send it to Discord.';
       loop();
+      dispatchEvent(new Event('dios:start'));
     } catch (e) {
       $('err').textContent = 'Could not start: ' + (e.name === 'NotAllowedError' ? 'microphone access was blocked. Allow it in the address bar.' : e.message);
       stop();
@@ -180,6 +182,7 @@
   }
 
   function stop() {
+    if (A) dispatchEvent(new Event('dios:stop'));
     cancelAnimationFrame(raf); raf = 0;
     if (rec && rec.state === 'recording') rec.stop();
     if (stream) stream.getTracks().forEach(t => t.stop());
