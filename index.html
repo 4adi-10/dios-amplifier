@@ -6,7 +6,7 @@
 <meta name="author" content="Aadi, DIOS Studioz">
 <meta name="copyright" content="&copy; 2026 DIOS Studioz. Fully made by Aadi.">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#0d060b">
+<meta name="theme-color" content="#0a0408">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DIOS Amp">
@@ -19,7 +19,7 @@
 <meta name="page-type" content="software">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/system.css">
 <link rel="stylesheet" href="assets/ui/cards.css">
 <link rel="stylesheet" href="assets/motion/motion.css">
@@ -45,10 +45,17 @@
 <link rel="stylesheet" href="assets/diagrams/diagram.css">
 <script src="assets/backgrounds/backgrounds.js"></script>
 <link rel="stylesheet" href="amp.css">
-<link rel="stylesheet" href="glass.css">
 <link rel="stylesheet" href="board.css">
+<link rel="stylesheet" href="lux.css">
+<script>
+/* arm the reveal styles before first paint; disarm them if lux.js never arrives, so nothing stays hidden */
+(function(){var h=document.documentElement;h.classList.add("lx");try{if(sessionStorage.getItem("lx-seen")==="1")h.classList.add("lx-seen")}catch(e){}
+setTimeout(function(){if(!window.LX_OK){h.classList.remove("lx");h.classList.add("lx-seen")}},4000)})();
+</script>
+<noscript><style>#lx-curtain{display:none}</style></noscript>
 </head>
 <body>
+<div id="lx-curtain" aria-hidden="true"><b><span>DIOS</span> <span>Amplifier</span></b><i></i><small>DIOS Studioz</small><em>000</em></div>
 
 <!-- type: software (site-kind software)
      deal: hero collage, nav nav-centre, close close-word, footer footer-columns, rhythm space (the owner asked for liquid glass over one aurora, so the white band went),
@@ -439,6 +446,7 @@
 <script type="module" src="assets/diagrams/mount.js"></script>
 <script src="amp.js"></script>
 <script src="board.js"></script>
+<script src="lux.js"></script>
 <script>
 /* the DIOS logo loops like a GIF: muted, no controls, paused when off screen or when motion is reduced */
 (() => {

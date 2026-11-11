@@ -1,7 +1,7 @@
 /* DIOS Amplifier service worker: makes the site installable and lets the app open offline.
    Network first, so a revoked key or a new deploy always wins while online; the cache is only a fallback. */
-const CACHE = 'dios-amp-v3';
-const SHELL = ['/', '/index.html', '/amp.js', '/amp.css', '/glass.css', '/board.js', '/board.css', '/yt.html',
+const CACHE = 'dios-amp-v4';
+const SHELL = ['/', '/index.html', '/amp.js', '/amp.css', '/lux.css', '/lux.js', '/board.js', '/board.css', '/yt.html',
   '/sounds/venix-theri-vili.mp3', '/intro/dios-intro.mp4', '/intro/dios-intro.jpg', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {
