@@ -98,6 +98,7 @@
     A.bass.gain.setTargetAtTime(S.bass, t, 0.03);
     A.mid.gain.setTargetAtTime(S.mid, t, 0.03);
     A.treble.gain.setTargetAtTime(S.treble, t, 0.03);
+    if (A.gw) A.gw.parameters.get('threshold').value = S.gate;
     const m = S.mode, clear = m === 'clear', comp = m === 'comp';
     // clear: a voice compressor evens out loud and quiet words, makeup brings it up, the limiter holds the peaks
     A.comp.threshold.value = clear ? -26 : comp ? -30 : 0;
@@ -141,6 +142,18 @@
     if (!('setSinkId' in HTMLMediaElement.prototype)) { out.disabled = true; out.options[0].text = 'Default output (this browser cannot switch)'; }
   }
 
+  // The noise gate runs in an AudioWorklet (gate-worklet.js) on the audio thread, so it keeps working in a
+  // hidden or minimised tab. Chrome pauses the page's drawing loop there, which is where the gate used to run.
+  async function addGate() {
+    try {
+      await A.ctx.audioWorklet.addModule('gate-worklet.js');
+      const gw = new AudioWorkletNode(A.ctx, 'dios-gate', { numberOfInputs: 2, numberOfOutputs: 1, outputChannelCount: [1] });
+      gw.port.onmessage = e => { if (!A) return; A._openUntil = e.data.open ? Infinity : 0; dispatchEvent(new CustomEvent('dios:talk', { detail: !!e.data.open })); };
+      A.hp.disconnect(A.gate); A.hp.connect(gw, 0, 0); gw.connect(A.gate);
+      A.gw = gw; A._openUntil = Infinity;
+    } catch (e) { A.gw = null; }   // an old browser: the drawing loop gates instead, while the tab is visible
+  }
+
   async function openMic() {
     const s = await navigator.mediaDevices.getUserMedia({ audio: {
       deviceId: S.inp ? { exact: S.inp } : undefined,
@@ -150,6 +163,7 @@
     stream = s;
     src = A.ctx.createMediaStreamSource(stream);
     src.connect(A.pre); src.connect(A.gain);
+    if (A.gw) src.connect(A.gw, 0, 1);
   }
 
   async function routeOut() {
@@ -162,6 +176,7 @@
     $('err').textContent = '';
     try {
       A = build();
+      await addGate();
       await openMic();
       await listDevices();
       outEl.srcObject = A.dest.stream; await routeOut(); await outEl.play();
@@ -255,9 +270,11 @@
     let rms = 0; for (const v of pbuf) rms += v * v; rms = Math.sqrt(rms / pbuf.length);
     const db = 20 * Math.log10(rms + 1e-9);
     const now = performance.now();
-    if (S.gate <= -90 || db > S.gate) A._openUntil = now + 180;
-    const gateOpen = now < (A._openUntil || 0);
-    A.gate.gain.setTargetAtTime(gateOpen ? 1 : 0, A.ctx.currentTime, gateOpen ? 0.005 : 0.05);
+    if (!A.gw) {   // fallback only: the worklet gate normally does this on the audio thread
+      if (S.gate <= -90 || db > S.gate) A._openUntil = now + 180;
+      const gateOpen = now < (A._openUntil || 0);
+      A.gate.gain.setTargetAtTime(gateOpen ? 1 : 0, A.ctx.currentTime, gateOpen ? 0.005 : 0.05);
+    }
 
     // output peak meter, peak hold and clip count
     let p = 0; for (const v of tbuf) p = Math.max(p, Math.abs(v));
@@ -361,6 +378,31 @@
       });
     });
   }
+
+  /* ---------------- keep working in the background ---------------- */
+  // The sound never depends on this page being visible. If Chrome suspends the audio engine anyway
+  // (after a device change or the PC waking from sleep), start it again; the drawing loop restarts on return.
+  document.addEventListener('visibilitychange', () => {
+    if (!A) return;
+    if (A.ctx.state === 'suspended') A.ctx.resume().catch(() => {});
+    if (document.hidden && !A.gw) A.gate.gain.setTargetAtTime(1, A.ctx.currentTime, 0.01);   // fallback gate: never freeze shut
+    if (!document.hidden) { cancelAnimationFrame(raf); loop(); }
+  });
+  setInterval(() => {
+    if (!A) return;
+    if (A.ctx.state === 'suspended') A.ctx.resume().catch(() => {});
+    if (outEl.paused && outEl.srcObject) outEl.play().catch(() => {});
+  }, 2000);
+  // the screen stays awake while live, where the browser allows it
+  let wake = null;
+  const keepAwake = async on => {
+    try {
+      if (on && !wake && navigator.wakeLock && !document.hidden) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); }
+      else if (!on && wake) { await wake.release(); wake = null; }
+    } catch (e) {}
+  };
+  addEventListener('dios:start', () => keepAwake(true)); addEventListener('dios:stop', () => keepAwake(false));
+  document.addEventListener('visibilitychange', () => { if (A && !document.hidden) keepAwake(true); });
 
   applyAll();
   listDevices().catch(() => {});

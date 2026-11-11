@@ -481,6 +481,8 @@
     duckT = setTimeout(duckLoop, 60);
   }
   const startDuck = () => { clearTimeout(duckT); duckLoop(); };
+  // the gate says when you start and stop talking, from the audio thread: ducking works in the background too
+  addEventListener('dios:talk', e => { if (bus && S.duck && +$('gate').value > -90) bus.duck.gain.setTargetAtTime(e.detail ? .25 : 1, bus.ctx.currentTime, e.detail ? .04 : .35); });
 
   /* ---------------- amp start / stop ---------------- */
   addEventListener('dios:start', () => {

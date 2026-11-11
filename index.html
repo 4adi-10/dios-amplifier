@@ -6,7 +6,7 @@
 <meta name="author" content="Aadi, DIOS Studioz">
 <meta name="copyright" content="&copy; 2026 DIOS Studioz. Fully made by Aadi.">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#0a0408">
+<meta name="theme-color" content="#07040a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DIOS Amp">
@@ -19,7 +19,7 @@
 <meta name="page-type" content="software">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400..700&family=Funnel+Sans:wght@400..600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/system.css">
 <link rel="stylesheet" href="assets/ui/cards.css">
 <link rel="stylesheet" href="assets/motion/motion.css">
@@ -28,13 +28,13 @@
 <link rel="stylesheet" href="assets/icons/icon.css">
 <style>
 :root {
-  --p-bg: #0d060b; --p-surface: #1b0e17; --p-ink: #ffffff; --p-muted: #9a8f97;
-  --p-accent: #ff488b; --p-accent-ink: #0d060b; --p-action: #ff488b; --p-action-ink: #0d060b;
+  --p-bg: #07040a; --p-surface: #150b12; --p-ink: #ffffff; --p-muted: #9a8f97;
+  --p-accent: #ff3d8b; --p-accent-ink: #07040a; --p-action: #ff3d8b; --p-action-ink: #07040a;
   --p-inv-bg: #ffffff; --p-inv-surface: #ebebeb; --p-inv-ink: #0d060b; --p-inv-muted: #5e575c;
   --p-inv-accent: #ff488b; --p-inv-accent-ink: #0d060b; --p-inv-action: #ff488b; --p-inv-action-ink: #0d060b;
-  --font-display: "Epilogue", system-ui, sans-serif;
-  --font-text: "Epilogue", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-display: "Funnel Display", system-ui, sans-serif;
+  --font-text: "Funnel Sans", system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --display-weight: 400;
   --display-tracking: -0.035em;
   --display-tracking-xl: -0.045em;
@@ -45,19 +45,17 @@
 <link rel="stylesheet" href="assets/diagrams/diagram.css">
 <script src="assets/backgrounds/backgrounds.js"></script>
 <link rel="stylesheet" href="amp.css">
+<link rel="stylesheet" href="glass.css">
 <link rel="stylesheet" href="board.css">
-<link rel="stylesheet" href="lux.css">
-<script>
-/* arm the reveal styles before first paint; disarm them if lux.js never arrives, so nothing stays hidden */
-(function(){var h=document.documentElement;h.classList.add("lx");try{if(sessionStorage.getItem("lx-seen")==="1")h.classList.add("lx-seen")}catch(e){}
-setTimeout(function(){if(!window.LX_OK){h.classList.remove("lx");h.classList.add("lx-seen")}},4000)})();
-</script>
-<noscript><style>#lx-curtain{display:none}</style></noscript>
+<link rel="stylesheet" href="studio.css">
+<script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
+<link rel="modulepreload" href="assets/moments/moments.js"><link rel="modulepreload" href="assets/moments/lib.js">
 </head>
 <body>
-<div id="lx-curtain" aria-hidden="true"><b><span>DIOS</span> <span>Amplifier</span></b><i></i><small>DIOS Studioz</small><em>000</em></div>
 
-<!-- type: software (site-kind software)
+<!-- v2 look: hero with the live DIOS core (studio.js), liquid headline and moving feature strip (assets/moments),
+     a light round the console rim while live, the aurora breathing with your voice.
+     type: software (site-kind software)
      deal: hero collage, nav nav-centre, close close-word, footer footer-columns, rhythm space (the owner asked for liquid glass over one aurora, so the white band went),
      buttons arrow, mark stack, ground sky, palette plum-black-pink, type epilogue, radius round
      effect: the hero's live waveform canvas (the one timed loop, with its pause button)
@@ -106,55 +104,47 @@ setTimeout(function(){if(!window.LX_OK){h.classList.remove("lx");h.classList.add
 </header>
 
 <main id="top">
-  <section class="hero hero--collage" aria-labelledby="hero-h">
-    <div class="wrap"><div class="hero-text grid hero__grid">
-      <div class="hero__text span-5">
-        <figure class="dios-loop" aria-label="DIOS Studioz logo animation">
-          <video id="diosLoop" src="/intro/dios-intro.mp4" poster="/intro/dios-intro.jpg" muted autoplay loop playsinline preload="metadata" disablepictureinpicture></video>
-          <figcaption>DIOS Studioz</figcaption>
-        </figure>
-        <h1 id="hero-h">Mic booster for Discord voice chat</h1>
-        <p class="hero__lead">DIOS Amplifier raises your microphone up to 100,000x (+100 dB), and a compressor and limiter keep every word clear instead of distorted. Free, in Chrome or Edge.</p>
-        <div class="btn-row">
-          <a class="btn btn--primary" href="#amp">Open the amplifier<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
-          <a class="btn btn--secondary" href="#extension">Get the extension</a>
-          <button class="btn btn--secondary" type="button" data-install hidden>Install the app</button>
-        </div>
-        <p class="hero__proof" id="installHint"></p>
-        <p class="hero__proof">Works with the Discord desktop app and Discord in Chrome.</p>
-      </div>
-      <div class="hero__art amp-ui span-6 start-7" role="img" aria-label="The DIOS Amplifier window boosting a quiet microphone signal to 100,000x, with its noise gate and bass settings">
-        <div class="ly-piece ly-piece--main hero-win" aria-hidden="true">
-          <div class="hero-win__bar"><span class="dots"><i></i><i></i><i></i></span><span>DIOS Amplifier</span></div>
-          <div class="hero-win__body">
-            <div class="hero-win__read"><b class="amp-mono" id="heroRead">100,000x</b><span>+100 dB · loud and clear</span></div>
-            <canvas id="heroWave" width="1120" height="440"></canvas>
-            <div class="hero-win__rows">
-              <div class="hero-win__row"><span>Noise gate</span><span class="bar" style="--v:62%"><i></i></span><em>−52 dB</em></div>
-              <div class="hero-win__row"><span>Bass</span><span class="bar" style="--v:70%"><i></i></span><em>+6 dB</em></div>
-              <div class="hero-win__row"><span>Treble</span><span class="bar" style="--v:55%"><i></i></span><em>+2 dB</em></div>
-            </div>
+  <section class="hero hero--core" aria-labelledby="hero-h">
+    <div class="wrap">
+      <div class="hero-text grid hero__grid">
+        <div class="hero__text span-5">
+          <h1 id="hero-h" data-moment="liquid-type" data-moment-opts='{"strength": 0.9}'>Mic booster for <span class="hl">Discord</span> voice chat</h1>
+          <p class="hero__lead">DIOS Amplifier raises your microphone up to 100,000x (+100 dB), and a compressor and limiter keep every word clear instead of distorted. Free, in Chrome or Edge.</p>
+          <div class="btn-row">
+            <a class="btn btn--primary" href="#amp">Open the amplifier<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+            <a class="btn btn--secondary" href="#extension">Get the extension</a>
+            <button class="btn btn--secondary" type="button" data-install hidden>Install the app</button>
           </div>
+          <p class="hero__proof" id="installHint"></p>
+          <dl class="hero-facts">
+            <div><dt>Gain</dt><dd>Up to 100,000x</dd></div>
+            <div><dt>Runs</dt><dd>In the background</dd></div>
+            <div><dt>Price</dt><dd>Free</dd></div>
+          </dl>
         </div>
-        <button class="ui-pause hero-wave-pause" type="button" id="heroPause" aria-label="Pause the waveform" aria-pressed="false">
-          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2v8M8.5 2v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </button>
-        <div class="ly-piece ly-piece--note amp-note" aria-hidden="true" data-ly-steps="700">
-          <div class="amp-note__head"><h5>Sent to Discord</h5><span data-step data-step-at="4">Live</span></div>
-          <div class="amp-note__line" data-step><i>✓</i><span>Mic boosted to <b>100,000x</b></span></div>
-          <div class="amp-note__line" data-step><i>✓</i><span>Fan noise gated under <b>−52 dB</b></span></div>
-          <div class="amp-note__line" data-step><i>✓</i><span>Out to <b>CABLE Input</b></span></div>
+        <div class="hero__stage span-7 start-6" role="img" aria-label="A quiet microphone signal goes into the DIOS logo and comes out boosted to 100,000x. When the amplifier is on, this shows your real voice.">
+          <canvas id="heroCore" width="1200" height="1000" aria-hidden="true"></canvas>
+          <div class="core-logo" aria-hidden="true"><video id="diosLoop" src="/intro/dios-intro.mp4" poster="/intro/dios-intro.jpg" muted autoplay loop playsinline preload="metadata" disablepictureinpicture></video></div>
+          <span class="core-tag core-tag--in" aria-hidden="true"><i></i>Your mic</span>
+          <span class="core-tag core-tag--out" aria-hidden="true"><i></i>To Discord</span>
+          <div class="core-read" aria-hidden="true"><b id="coreRead">100,000x</b><span id="coreDb">+100 dB · loud and clear</span></div>
+          <button class="ui-pause" type="button" id="corePause" aria-label="Pause the animation" aria-pressed="false"></button>
         </div>
       </div>
-    </div></div>
+      <div class="hero__dock" aria-label="What DIOS Amplifier does">
+        <div data-moment="marquee-row" data-moment-opts='{"speed": 30, "gap": 48}'>
+          <ul class="mo-mq__track"><li>100,000x gain</li><li>Noise gate</li><li>Three-band EQ</li><li>Loud and clear limiter</li><li>Soundboard</li><li>YouTube to Discord</li><li>Push-to-talk</li><li>Test recorder</li><li>VB-Cable</li><li>Chrome extension</li><li>Works in the background</li></ul>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- APP-FRAME: the real, working amplifier. Two screens: every control stays usable, so nothing is cut by a fade. -->
   <section class="section" id="amp" aria-labelledby="amp-h" style="--h: 2">
     <div class="wrap">
       <div class="grid">
-        <h2 id="amp-h" class="span-5">The amplifier, live in your browser</h2>
-        <p class="span-6 start-7 muted t-lead">Press Start, allow the microphone, then pick a preset. Settings stay saved on this computer. Use headphones so the boosted sound never reaches your mic.</p>
+        <h2 id="amp-h" class="span-5">The <span class="hl">amplifier</span>, live in your browser</h2>
+        <p class="span-6 start-7 muted t-lead">Press Start, allow the microphone, then pick a preset. Settings stay saved on this computer. Use headphones so the boosted sound never reaches your mic. It keeps running when you switch tabs or minimise the window.</p>
       </div>
       <div class="console ui amp-ui" id="console">
         <div class="console__pane console__pane--rack">
@@ -239,7 +229,7 @@ setTimeout(function(){if(!window.LX_OK){h.classList.remove("lx");h.classList.add
   <section class="section" id="board" aria-labelledby="board-h" style="--h: 2">
     <div class="wrap">
       <div class="grid">
-        <h2 id="board-h" class="span-5">Soundboard and YouTube, on your mic</h2>
+        <h2 id="board-h" class="span-5"><span class="hl">Soundboard</span> and YouTube, on your mic</h2>
         <p class="span-6 start-7 muted t-lead">Sounds and music mix into the same boosted output Discord hears, right alongside your voice. Press Start above, then hit a pad or share a YouTube video.</p>
       </div>
       <div class="console lg ui amp-ui" id="boardConsole">
@@ -314,7 +304,7 @@ setTimeout(function(){if(!window.LX_OK){h.classList.remove("lx");h.classList.add
             <div class="mini" aria-hidden="true">
               <div class="mini__head"><b>Noise gate</b><span class="amp-mono">−52 dB</span></div>
               <div class="mini__wave">
-                <i class="q" style="--h:6%"></i><i class="q" style="--h:9%"></i><i class="q" style="--h:5%"></i><i style="--h:40%"></i><i style="--h:78%"></i><i style="--h:95%"></i><i style="--h:60%"></i><i style="--h:84%"></i><i style="--h:52%"></i><i style="--h:30%"></i><i class="q" style="--h:7%"></i><i class="q" style="--h:4%"></i><i class="q" style="--h:8%"></i><i style="--h:46%"></i><i style="--h:88%"></i><i style="--h:70%"></i><i style="--h:36%"></i><i class="q" style="--h:6%"></i><i class="q" style="--h:5%"></i>
+                <i class="q" style="--i:1;--h:6%"></i><i class="q" style="--i:2;--h:9%"></i><i class="q" style="--i:3;--h:5%"></i><i style="--i:4;--h:40%"></i><i style="--i:5;--h:78%"></i><i style="--i:6;--h:95%"></i><i style="--i:7;--h:60%"></i><i style="--i:8;--h:84%"></i><i style="--i:9;--h:52%"></i><i style="--i:10;--h:30%"></i><i class="q" style="--i:11;--h:7%"></i><i class="q" style="--i:12;--h:4%"></i><i class="q" style="--i:13;--h:8%"></i><i style="--i:14;--h:46%"></i><i style="--i:15;--h:88%"></i><i style="--i:16;--h:70%"></i><i style="--i:17;--h:36%"></i><i class="q" style="--i:18;--h:6%"></i><i class="q" style="--i:19;--h:5%"></i>
               </div>
             </div>
           </div>
@@ -340,7 +330,7 @@ setTimeout(function(){if(!window.LX_OK){h.classList.remove("lx");h.classList.add
             <div class="mini" aria-hidden="true">
               <div class="mini__head"><b>Test recorder</b><span class="amp-mono">0:05</span></div>
               <div class="mini__wave">
-                <i style="--h:20%"></i><i style="--h:44%"></i><i style="--h:66%"></i><i style="--h:30%"></i><i style="--h:80%"></i><i style="--h:56%"></i><i style="--h:38%"></i><i style="--h:72%"></i><i style="--h:90%"></i><i style="--h:48%"></i><i style="--h:26%"></i><i style="--h:60%"></i><i style="--h:34%"></i><i style="--h:76%"></i><i style="--h:42%"></i><i style="--h:22%"></i>
+                <i style="--i:1;--h:20%"></i><i style="--i:2;--h:44%"></i><i style="--i:3;--h:66%"></i><i style="--i:4;--h:30%"></i><i style="--i:5;--h:80%"></i><i style="--i:6;--h:56%"></i><i style="--i:7;--h:38%"></i><i style="--i:8;--h:72%"></i><i style="--i:9;--h:90%"></i><i style="--i:10;--h:48%"></i><i style="--i:11;--h:26%"></i><i style="--i:12;--h:60%"></i><i style="--i:13;--h:34%"></i><i style="--i:14;--h:76%"></i><i style="--i:15;--h:42%"></i><i style="--i:16;--h:22%"></i>
               </div>
               <div class="mini__ctl"><span>Play test</span><span>Record 5 s</span></div>
             </div>
@@ -403,6 +393,7 @@ setTimeout(function(){if(!window.LX_OK){h.classList.remove("lx");h.classList.add
         <div class="span-5"><h2 id="faq-h">Questions</h2></div>
         <div class="faq span-6 start-7">
           <div class="faq__item"><h3>How does 100,000x stay clear?</h3><p>The Loud and clear limiter compresses your voice and holds every peak just under full scale, so it never clips into static.</p></div>
+          <div class="faq__item"><h3>Does it keep working in the background?</h3><p>Yes. The boost, the noise gate, the soundboard and YouTube keep running when the tab is hidden or the window is minimised. Keep the tab open.</p></div>
           <div class="faq__item"><h3>Do the hotkeys work in other windows?</h3><p>No. M, Space and R work while this tab is focused. Use Discord’s own keybinds for in-game push-to-talk.</p></div>
           <div class="faq__item"><h3>Does it work on a phone?</h3><p>Not in the Discord app. Phones block virtual cables and mic changes between apps.</p></div>
           <div class="faq__item"><h3>Which browsers work?</h3><p>Chrome and Edge on Windows or Mac. Firefox runs it, but cannot pick an output device.</p></div>
@@ -446,7 +437,7 @@ setTimeout(function(){if(!window.LX_OK){h.classList.remove("lx");h.classList.add
 <script type="module" src="assets/diagrams/mount.js"></script>
 <script src="amp.js"></script>
 <script src="board.js"></script>
-<script src="lux.js"></script>
+<script src="studio.js"></script>
 <script>
 /* the DIOS logo loops like a GIF: muted, no controls, paused when off screen or when motion is reduced */
 (() => {

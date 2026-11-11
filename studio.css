@@ -1,0 +1,119 @@
+/* DIOS Amplifier v2: the new look. Loaded last, after amp.css, glass.css and board.css.
+   Same controls and ids as before; only the picture changes. --lvl (0 to 1) is your live voice level, set by studio.js. */
+@property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+:root { --lvl: 0; --hot: var(--p-accent); --hot-2: #ff9a4d; --cool: #4d8bff; }
+html { background: #07040a; }
+
+/* ---------- the aurora breathes with your voice ---------- */
+body::before {
+  background:
+    radial-gradient(40vmax 30vmax at 16% 20%, rgb(255 61 139 / .40), transparent 62%),
+    radial-gradient(32vmax 26vmax at 84% 14%, rgb(255 154 77 / .20), transparent 62%),
+    radial-gradient(42vmax 34vmax at 74% 84%, rgb(77 139 255 / .24), transparent 64%),
+    radial-gradient(28vmax 24vmax at 20% 88%, rgb(255 61 139 / .20), transparent 62%) !important;
+  opacity: calc(.7 + var(--lvl) * .6);
+  transition: opacity 120ms linear;
+}
+
+/* ---------- type ---------- */
+h1, h2, .close__word { font-family: var(--font-display); }
+h2 { letter-spacing: -.035em; }
+.hl {
+  background: linear-gradient(100deg, #fff 0%, #fff 30%, #ffc2da 45%, var(--hot) 55%, var(--hot-2) 65%, #fff 80%) 0 0 / 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: hl-sweep 9s ease-in-out infinite;
+}
+@keyframes hl-sweep { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
+
+/* ---------- hero: words left, the live core right ---------- */
+.hero--core .hero__grid { align-items: stretch; }
+.hero--core .hero__text { display: flex; flex-direction: column; gap: 24px; align-self: start; }
+.hero--core h1 { font-size: clamp(44px, 5.4vw, 80px); line-height: .98; letter-spacing: -.045em; font-weight: 500; margin: 0; }
+.hero--core .hero__lead { margin: 0; max-width: 34ch; }
+.hero-pill { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; height: 34px; padding: 0 14px 0 4px; border-radius: 999px;
+  font: 500 13px/1 var(--font-text); color: #ffd9e7; background: rgb(255 255 255 / .06); border: 1px solid rgb(255 255 255 / .14); }
+.hero-pill i { display: grid; place-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-style: normal; color: #1a0610; background: var(--hot); }
+.hero-facts { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 8px 32px; margin: 8px 0 0; }
+.hero-facts dt { font: 500 13px/1.2 var(--font-text); color: var(--muted); }
+.hero-facts dd { margin: 4px 0 0; font: 500 20px/1.2 var(--font-display); color: #fff; }
+.hero__stage { position: relative; container-type: size; min-height: 420px; height: calc(100svh - var(--nav, 72px) - 48px - 160px); max-height: 640px; border-radius: 32px; overflow: hidden;
+  background: radial-gradient(60% 60% at 50% 50%, rgb(255 61 139 / .10), transparent 70%), rgb(255 255 255 / .02);
+  border: 1px solid rgb(255 255 255 / .12); box-shadow: inset 0 1px 0 rgb(255 255 255 / .18), 0 40px 120px -40px rgb(255 61 139 / .45); }
+.hero__stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.core-logo { position: absolute; left: 50%; top: 50%; width: calc(min(100cqw, 100cqh) * .44); aspect-ratio: 1; transform: translate(-50%, -50%) scale(calc(1 + var(--lvl) * .06));
+  border-radius: 50%; overflow: hidden; background: #07040a; box-shadow: 0 0 0 1px rgb(255 255 255 / .16), 0 0 calc(30px + var(--lvl) * 90px) rgb(255 61 139 / calc(.35 + var(--lvl) * .5)); transition: transform 90ms linear; }
+.core-logo video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.core-read { position: absolute; left: 24px; bottom: 24px; display: grid; gap: 4px; padding: 14px 18px; border-radius: 18px; min-width: 210px;
+  background: rgb(10 5 9 / .72); border: 1px solid rgb(255 255 255 / .14); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.core-read b { font: 500 34px/1 var(--font-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #fff, #ffc2da 45%, var(--hot)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.core-read span { font: 400 13px/1.2 var(--font-mono); color: #cdbcc6; }
+.core-tag { position: absolute; top: 20px; font: 500 12px/1 var(--font-mono); color: #cdbcc6; display: flex; align-items: center; gap: 8px; }
+.core-tag--in { left: 24px; } .core-tag--out { right: 24px; color: #ffd0e2; }
+.core-tag i { width: 7px; height: 7px; border-radius: 50%; background: rgb(255 255 255 / .4); }
+.core-tag--out i { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
+html[data-live] .core-tag--out i { animation: core-blink 1.2s ease-in-out infinite; }
+@keyframes core-blink { 50% { opacity: .35; } }
+.hero__stage .ui-pause { position: absolute; right: 16px; bottom: 16px; z-index: 2; }
+.hero__dock { margin-top: 32px; }
+
+/* the moving feature strip under the hero */
+.hero__dock [data-moment] { --mo-gap: 48px; }
+.hero__dock ul { display: flex; gap: 48px; margin: 0; padding: 0; list-style: none; font: 400 18px/1 var(--font-display); color: #e9dbe3; white-space: nowrap; }
+.hero__dock li { display: inline-flex; align-items: center; gap: 48px; }
+.hero__dock li::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--hot); box-shadow: 0 0 10px var(--hot); }
+
+/* ---------- the consoles: a light runs round the rim while live ---------- */
+:is(#amp, #board) .console { transition: box-shadow 160ms linear; }
+html[data-live] :is(#amp, #board) .console { box-shadow: var(--lg-shadow), 0 0 calc(var(--lvl) * 120px) calc(var(--lvl) * 6px) rgb(255 61 139 / calc(var(--lvl) * .55)) !important; }
+html[data-live] :is(#amp, #board) .console::after {
+  padding: 1.5px;
+  background: conic-gradient(from var(--ang), transparent 0deg, var(--hot) 40deg, #ffd0e2 70deg, var(--hot-2) 100deg, transparent 150deg, transparent 360deg) !important;
+  animation: rim 3.2s linear infinite;
+}
+@keyframes rim { to { --ang: 360deg; } }
+.c-go { transition: transform 140ms, box-shadow 200ms; }
+.c-go:not([data-live]) { animation: go-pulse 2.8s ease-in-out infinite; }
+@keyframes go-pulse { 0%, 100% { box-shadow: inset 0 1px 0 rgb(255 255 255 / .7), inset 0 -6px 14px rgb(120 0 40 / .35), 0 12px 34px -10px rgb(255 61 139 / .8), 0 0 0 0 rgb(255 61 139 / .45); }
+  50% { box-shadow: inset 0 1px 0 rgb(255 255 255 / .7), inset 0 -6px 14px rgb(120 0 40 / .35), 0 12px 34px -10px rgb(255 61 139 / .8), 0 0 0 12px rgb(255 61 139 / 0); } }
+.c-read b { font-family: var(--font-display); }
+.c-meter__fill { transition: width 60ms linear; }
+
+/* ---------- feature cards: each mini loops in 3 s and restarts on hover ---------- */
+.feat .card { transition: transform 220ms var(--m-ease, ease), box-shadow 220ms; }
+.feat .card:hover { transform: translateY(-2px); box-shadow: var(--lg-shadow), 0 30px 80px -30px rgb(255 61 139 / .55) !important; }
+.mini__wave i:not(.q) { transform-origin: 50% 50%; animation: bar-talk 3s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -.17s); }
+.mini__wave i.q { animation: bar-gate 3s ease-in-out infinite; }
+@keyframes bar-talk { 0%, 100% { transform: scaleY(1); } 30% { transform: scaleY(.55); } 60% { transform: scaleY(1.12); } }
+@keyframes bar-gate { 0%, 100% { opacity: .35; } 50% { opacity: .15; } }
+.mini__bands span i { animation: band 3s ease-in-out infinite; }
+.mini__bands div:nth-child(2) span i { animation-delay: -1s; } .mini__bands div:nth-child(3) span i { animation-delay: -2s; }
+@keyframes band { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(14%); } }
+.mini__wave { position: relative; }
+.feat .card:nth-child(3) .mini__wave::after { content: ""; position: absolute; top: -6px; bottom: -6px; left: 0; width: 2px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px var(--hot); animation: playhead 3s linear infinite; }
+@keyframes playhead { from { left: 0; } to { left: calc(100% - 2px); } }
+.feat .card:hover :is(.mini__wave i, .mini__bands span i, .mini__wave::after) { animation-play-state: running; }
+
+/* ---------- the close: the name lit by a slow sweep ---------- */
+.close__word { background: linear-gradient(100deg, rgb(255 255 255 / .14) 0%, rgb(255 255 255 / .14) 35%, var(--hot) 50%, rgb(255 255 255 / .14) 65%) 0 0 / 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent !important; animation: hl-sweep 12s ease-in-out infinite; }
+
+/* ---------- smaller screens ---------- */
+@media (max-width: 1023px) {
+  .hero--core .hero__grid > * { grid-column: 1 / -1; }
+  .hero__stage { height: 46svh; min-height: 300px; }
+  .hero-facts { display: none; }
+}
+@media (max-width: 639px) {
+  .hero__stage { height: 38svh; min-height: 260px; border-radius: 24px; }
+  .core-read { left: 12px; bottom: 12px; min-width: 0; padding: 10px 12px; } .core-read b { font-size: 24px; }
+  .core-tag { top: 12px; } .core-tag--in { left: 14px; } .core-tag--out { right: 14px; }
+  .hero__dock { display: none; }
+}
+
+/* ---------- calm when asked ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .hl, .close__word, .c-go, .mini__wave i, .mini__bands span i, .mini__wave::after, html[data-live] :is(#amp, #board) .console::after, html[data-live] .core-tag--out i { animation: none !important; }
+  .core-logo { transform: translate(-50%, -50%); }
+}
+[hidden] { display: none !important; }
