@@ -117,7 +117,7 @@
           </div>
           <p class="hero__proof" id="installHint"></p>
           <dl class="hero-facts">
-            <div><dt>Gain</dt><dd>Up to 100,000x</dd></div>
+            <div><dt>Gain</dt><dd>Up to 1,000,000x</dd></div>
             <div><dt>Runs</dt><dd>In the background</dd></div>
             <div><dt>Price</dt><dd>Free</dd></div>
           </dl>
@@ -156,6 +156,7 @@
             <button class="c-preset" type="button" data-preset="bass" aria-pressed="false"><b>Bass boost</b><span>300x · bass +12</span></button>
             <button class="c-preset" type="button" data-preset="radio" aria-pressed="false"><b>Radio</b><span>300x · compressor</span></button>
             <button class="c-preset" type="button" data-preset="dist" aria-pressed="false"><b>Distorted</b><span>100,000x · hard clip</span></button>
+            <button class="c-preset c-preset--pro" type="button" data-preset="ultra" data-pro aria-pressed="false"><b><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>Ultra</b><span>1,000,000x · Pro</span></button>
           </div>
           <div class="c-group">
             <label class="c-label" for="inp">Microphone</label>
@@ -188,11 +189,12 @@
           </div>
           <div class="c-group">
             <label class="c-label" for="gain">Gain</label>
-            <input class="c-range" type="range" id="gain" min="0" max="100" step="0.1" value="0">
+            <input class="c-range" type="range" id="gain" min="0" max="100" step="0.1" value="0" aria-describedby="proNote">
             <div class="c-chips">
-              <button type="button" data-x="10">10x</button><button type="button" data-x="100">100x</button><button type="button" data-x="1000">1000x</button><button type="button" data-x="10000">10,000x</button><button type="button" data-x="100000">100,000x</button>
+              <button type="button" data-x="10">10x</button><button type="button" data-x="100">100x</button><button type="button" data-x="1000">1000x</button><button type="button" data-x="10000">10,000x</button><button type="button" data-x="100000">100,000x</button><button type="button" data-x="300000" data-pro><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>300,000x</button><button type="button" data-x="1000000" data-pro><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>1,000,000x</button>
             </div>
           </div>
+          <p class="c-pro" id="proNote"><span class="c-pro__badge">Normal key</span><span>Up to 100,000x. A Pro key unlocks 300,000x and 1,000,000x.</span></p>
           <div class="c-knobs">
             <div class="c-knob"><label for="gate">Noise gate <output id="gateV" for="gate">Off</output></label><input class="c-range" type="range" id="gate" min="-90" max="-20" step="1" value="-90"></div>
             <div class="c-knob"><label for="bass">Bass <output id="bassV" for="bass">0 dB</output></label><input class="c-range" type="range" id="bass" min="-12" max="15" step="1" value="0"></div>
@@ -252,7 +254,7 @@
             <button class="c-btn" type="button" id="ytFwd">+10 s</button>
           </div>
           <div class="c-knob"><label for="ytVol">Music volume <output id="ytVolV" for="ytVol">100%</output></label><input class="c-range" type="range" id="ytVol" min="0" max="500" step="1" value="100"></div>
-          <div class="c-knob"><label for="ytBoost">Music boost <output id="ytBoostV" for="ytBoost">1x · +0 dB</output></label><input class="c-range" type="range" id="ytBoost" min="0" max="100" step="0.1" value="0"><div class="c-chips b-chips"><button type="button" data-bx="ytBoost" data-x="1">1x</button><button type="button" data-bx="ytBoost" data-x="10">10x</button><button type="button" data-bx="ytBoost" data-x="100">100x</button><button type="button" data-bx="ytBoost" data-x="1000">1000x</button><button type="button" data-bx="ytBoost" data-x="10000">10,000x</button><button type="button" data-bx="ytBoost" data-x="100000">100,000x</button></div></div>
+          <div class="c-knob"><label for="ytBoost">Music boost <output id="ytBoostV" for="ytBoost">1x · +0 dB</output></label><input class="c-range" type="range" id="ytBoost" min="0" max="100" step="0.1" value="0"><div class="c-chips b-chips"><button type="button" data-bx="ytBoost" data-x="1">1x</button><button type="button" data-bx="ytBoost" data-x="10">10x</button><button type="button" data-bx="ytBoost" data-x="100">100x</button><button type="button" data-bx="ytBoost" data-x="1000">1000x</button><button type="button" data-bx="ytBoost" data-x="10000">10,000x</button><button type="button" data-bx="ytBoost" data-x="100000">100,000x</button><button type="button" data-bx="ytBoost" data-x="1000000" data-pro><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>1,000,000x</button></div></div>
           <div class="c-group">
             <label class="c-switch">Lower music while I talk <input type="checkbox" id="duck"></label>
             <label class="c-switch">Hear sounds and music myself <input type="checkbox" id="hear" checked></label>
@@ -266,7 +268,7 @@
           <div class="b-pads" id="pads"></div>
           <div class="c-knobs b-knobs">
             <div class="c-knob"><label for="bdVol">Sound volume <output id="bdVolV" for="bdVol">100%</output></label><input class="c-range" type="range" id="bdVol" min="0" max="200" step="1" value="100"></div>
-            <div class="c-knob"><label for="bdBoost">Sound boost <output id="bdBoostV" for="bdBoost">1x · +0 dB</output></label><input class="c-range" type="range" id="bdBoost" min="0" max="100" step="0.1" value="0"><div class="c-chips b-chips"><button type="button" data-bx="boost" data-x="1">1x</button><button type="button" data-bx="boost" data-x="10">10x</button><button type="button" data-bx="boost" data-x="100">100x</button><button type="button" data-bx="boost" data-x="1000">1000x</button><button type="button" data-bx="boost" data-x="10000">10,000x</button><button type="button" data-bx="boost" data-x="100000">100,000x</button></div></div>
+            <div class="c-knob"><label for="bdBoost">Sound boost <output id="bdBoostV" for="bdBoost">1x · +0 dB</output></label><input class="c-range" type="range" id="bdBoost" min="0" max="100" step="0.1" value="0"><div class="c-chips b-chips"><button type="button" data-bx="boost" data-x="1">1x</button><button type="button" data-bx="boost" data-x="10">10x</button><button type="button" data-bx="boost" data-x="100">100x</button><button type="button" data-bx="boost" data-x="1000">1000x</button><button type="button" data-bx="boost" data-x="10000">10,000x</button><button type="button" data-bx="boost" data-x="100000">100,000x</button><button type="button" data-bx="boost" data-x="1000000" data-pro><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>1,000,000x</button></div></div>
           </div>
           <div class="b-fx">
             <p class="c-label">Sound and music effects, same as the mic</p>

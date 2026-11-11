@@ -117,3 +117,15 @@ html[data-live] :is(#amp, #board) .console::after {
   .core-logo { transform: translate(-50%, -50%); }
 }
 [hidden] { display: none !important; }
+
+/* ---------- Pro levels: locked for a normal key, lit for a Pro key ---------- */
+.lock { width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
+html[data-tier="normal"] [data-pro] { opacity: .5; cursor: not-allowed; }
+html[data-tier="normal"] [data-pro]:hover { opacity: .75; }
+html[data-tier="pro"] [data-pro] .lock { display: none; }
+html[data-tier="pro"] .c-chips [data-pro], html[data-tier="pro"] .c-preset--pro { border-color: rgb(255 154 77 / .55) !important; color: #ffd9b8; }
+.c-pro { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 13px; color: var(--a-mute); }
+.c-pro__badge { flex: none; height: 22px; padding: 0 9px; border-radius: 999px; display: inline-flex; align-items: center; font: 500 12px/1 var(--font-mono); color: #cdbcc6; border: 1px solid rgb(255 255 255 / .18); }
+html[data-tier="pro"] .c-pro__badge { color: #1a0610; border-color: transparent; background: linear-gradient(90deg, var(--hot), var(--hot-2)); }
+.c-chips button { white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
+.c-preset--pro b { display: inline-flex; align-items: center; }

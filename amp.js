@@ -12,14 +12,20 @@
     max:   { gain: 100000, gate: -50, bass: 2,  mid: 5,  treble: 3,  mode: 'clear' },
     bass:  { gain: 300,    gate: -55, bass: 12, mid: 1,  treble: 0,  mode: 'clear' },
     radio: { gain: 300,    gate: -52, bass: -8, mid: 8,  treble: -4, mode: 'comp' },
-    dist:  { gain: 100000, gate: -45, bass: 6,  mid: 0,  treble: 0,  mode: 'hard' }
+    dist:  { gain: 100000, gate: -45, bass: 6,  mid: 0,  treble: 0,  mode: 'hard' },
+    ultra: { gain: 1000000, gate: -45, bass: 2,  mid: 5,  treble: 3,  mode: 'clear' }   // Pro keys only
   };
   const DEF = { gain: 100, gate: -60, bass: 0, mid: 3, treble: 2, mode: 'clear', ns: true, inp: '', out: '', monitor: false, ptt: false, preset: '' };
   let S = { ...DEF };
   try { S = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
-  const toGain = v => Math.pow(10, v / 20);           // slider 0..100 -> 1x..100,000x (+100 dB)
+  const toGain = v => Math.pow(10, v / 20);           // slider 0..120 dB -> 1x..1,000,000x
+  /* ---------------- Pro levels ---------------- */
+  // A normal key goes up to 100,000x (+100 dB); a Pro key up to 1,000,000x (+120 dB). /api/me says which.
+  const TIER = { pro: false, maxDb: 100 };
+  const capGain = g => Math.min(g, Math.pow(10, TIER.maxDb / 20));
+  const locked = () => { const e = $('err'); e.textContent = 'Levels above 100,000x need a Pro key. Ask an admin for one, then sign out and enter it.'; clearTimeout(locked.t); locked.t = setTimeout(() => { if (e.textContent.startsWith('Levels above')) e.textContent = ''; }, 5000); };
   const fromGain = x => 20 * Math.log10(Math.max(1, x));
   const fmtX = g => (g >= 100 ? Math.round(g).toLocaleString('en') : g.toFixed(1).replace(/\.0$/, '')) + 'x';
   const fmtDb = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' dB';
@@ -44,7 +50,7 @@
   //     -> gain -> gate -> bass -> mid -> treble -> comp -> shaper -> master (mute/ptt) -> analyser
   //                                                                   -> dest (cable / recorder) + monitor
   let A = null;
-  window.DIOS = { get A() { return A; } };   // the soundboard (board.js) mixes into this graph
+  window.DIOS = { get A() { return A; }, TIER, locked: () => locked() };   // the soundboard (board.js) mixes into this graph
   let stream = null, src = null, raf = 0, muted = false, talking = false;
   let peakHold = 0, peakAt = 0, clips = 0, clipLatch = false, rec = null, recUrl = '';
   const outEl = new Audio(); const monEl = new Audio();
@@ -83,7 +89,9 @@
   }
 
   let applyAll = function () {
+    S.gain = capGain(S.gain);
     const g = S.gain;
+    $('gain').max = TIER.maxDb;
     $('gain').value = fromGain(g);
     $('read').textContent = fmtX(g);
     $('db').textContent = '+' + Math.round(20 * Math.log10(g)) + ' dB';
@@ -328,11 +336,11 @@
   /* ---------------- controls ---------------- */
   const set = (patch, keepPreset) => { Object.assign(S, patch); if (!keepPreset) S.preset = ''; save(); applyAll(); };
   $('gain').addEventListener('input', e => set({ gain: toGain(+e.target.value) }));
-  document.querySelectorAll('.c-chips [data-x]').forEach(b => b.addEventListener('click', () => set({ gain: +b.dataset.x })));
+  document.querySelectorAll('.c-chips [data-x]').forEach(b => b.addEventListener('click', () => { if (b.hasAttribute('data-pro') && !TIER.pro) { locked(); return; } set({ gain: +b.dataset.x }); }));
   $('gate').addEventListener('input', e => set({ gate: +e.target.value }));
   for (const k of ['bass', 'mid', 'treble']) $(k).addEventListener('input', e => set({ [k]: +e.target.value }));
   $('mode').addEventListener('change', e => set({ mode: e.target.value }));
-  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => set({ ...PRESETS[b.dataset.preset], preset: b.dataset.preset }, true)));
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => { if (b.hasAttribute('data-pro') && !TIER.pro) { locked(); return; } set({ ...PRESETS[b.dataset.preset], preset: b.dataset.preset }, true); }));
   $('monitor').addEventListener('change', e => { set({ monitor: e.target.checked }, true); if (A && S.monitor) monEl.play().catch(() => {}); });
   $('ptt').addEventListener('change', e => set({ ptt: e.target.checked }, true));
   $('ns').addEventListener('change', async e => {
@@ -403,6 +411,15 @@
   };
   addEventListener('dios:start', () => keepAwake(true)); addEventListener('dios:stop', () => keepAwake(false));
   document.addEventListener('visibilitychange', () => { if (A && !document.hidden) keepAwake(true); });
+
+  // ask the server what this key unlocks; until it answers, the page acts as a normal key
+  document.documentElement.dataset.tier = 'normal';
+  fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(j => {
+    TIER.pro = !!(j && j.pro); TIER.maxDb = TIER.pro ? 120 : 100;
+    document.documentElement.dataset.tier = TIER.pro ? 'pro' : 'normal';
+    const n = $('proNote'); if (n && TIER.pro) { n.firstElementChild.textContent = 'Pro key'; n.lastElementChild.textContent = 'All levels unlocked, up to 1,000,000x (+120 dB).'; }
+    applyAll(); dispatchEvent(new Event('dios:tier'));
+  }).catch(() => {});
 
   applyAll();
   listDevices().catch(() => {});

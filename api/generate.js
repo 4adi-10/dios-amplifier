@@ -13,10 +13,11 @@ export async function POST(request) {
   }
   const days = Math.max(0, Math.min(3650, Number(body.days) || 0));
   const count = Math.max(1, Math.min(20, Number(body.count) || 1));
+  const pro = body.pro === true;
   const keys = [];
   for (let i = 0; i < count; i++) {
-    const k = await makeKey(process.env.KEY_SECRET, days);
-    keys.push({ key: k.key, id: k.id, exp: k.exp });
+    const k = await makeKey(process.env.KEY_SECRET, days, pro);
+    keys.push({ key: k.key, id: k.id, exp: k.exp, pro });
   }
   return Response.json({ ok: true, keys, by: String(body.user).trim() }, { headers: { 'Cache-Control': 'no-store' } });
 }

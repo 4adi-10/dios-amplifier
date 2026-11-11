@@ -519,14 +519,20 @@
     ['bdVol', 'bdBoost', 'ytVol', 'ytBoost', 'fxbass', 'fxmid', 'fxtreble'].forEach(id => paintRange($(id)));
   }
   // any hand change clears the highlighted preset, like on the mic
-  const set = (patch, keepFx) => { Object.assign(S, patch); if (!keepFx) S.fx = ''; save(); paintControls(); applyAllBuses(); };
+  // a normal key stops at +100 dB (100,000x); a Pro key goes to +120 dB (1,000,000x), like the mic
+  const T = () => (window.DIOS && window.DIOS.TIER) || { pro: false, maxDb: 100 };
+  const capDb = () => { const m = T().maxDb; S.boost = Math.min(S.boost, m); S.ytBoost = Math.min(S.ytBoost, m); $('bdBoost').max = m; $('ytBoost').max = m; };
+  const set = (patch, keepFx) => { Object.assign(S, patch); capDb(); if (!keepFx) S.fx = ''; save(); paintControls(); applyAllBuses(); };
+  addEventListener('dios:tier', () => { capDb(); save(); paintControls(); applyAllBuses(); });
   $('bdVol').addEventListener('input', e => set({ vol: +e.target.value }, true));
   $('bdBoost').addEventListener('input', e => set({ boost: +e.target.value }));
   $('ytVol').addEventListener('input', e => set({ ytVol: +e.target.value }, true));
   $('ytBoost').addEventListener('input', e => set({ ytBoost: +e.target.value }));
   // quick boost buttons: 10x .. 100,000x
-  document.querySelectorAll('[data-bx]').forEach(btn => btn.addEventListener('click', () =>
-    set({ [btn.dataset.bx]: Math.round(20 * Math.log10(+btn.dataset.x) * 10) / 10 })));
+  document.querySelectorAll('[data-bx]').forEach(btn => btn.addEventListener('click', () => {
+    if (btn.hasAttribute('data-pro') && !T().pro) { window.DIOS.locked(); return; }
+    set({ [btn.dataset.bx]: Math.round(20 * Math.log10(+btn.dataset.x) * 10) / 10 });
+  }));
   $('bdMode').addEventListener('change', e => set({ mode: e.target.value }));
   for (const k of ['bass', 'mid', 'treble']) $('fx' + k).addEventListener('input', e => set({ [k]: +e.target.value }));
   document.querySelectorAll('[data-fx]').forEach(b => b.addEventListener('click', () => set({ ...FX_PRESETS[b.dataset.fx], fx: b.dataset.fx }, true)));
@@ -574,7 +580,7 @@
     });
   }
 
-  paintControls(); renderPads(); paintYT(); loadCustom(); syncLoop();
+  capDb(); paintControls(); renderPads(); paintYT(); loadCustom(); syncLoop();
   if (window.DIOS && window.DIOS.A) dispatchEvent(new Event('dios:start'));
   // decode the built-ins in the background so the first press is instant and lengths show
   const warm = () => pads.forEach(p => bufferFor(p).catch(() => {}));
