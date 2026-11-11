@@ -194,7 +194,17 @@
               <button type="button" data-x="10">10x</button><button type="button" data-x="100">100x</button><button type="button" data-x="1000">1000x</button><button type="button" data-x="10000">10,000x</button><button type="button" data-x="100000">100,000x</button><button type="button" data-x="300000" data-pro><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>300,000x</button><button type="button" data-x="1000000" data-pro><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>1,000,000x</button>
             </div>
           </div>
-          <p class="c-pro" id="proNote"><span class="c-pro__badge">Normal key</span><span>Up to 100,000x. A Pro key unlocks 300,000x and 1,000,000x.</span></p>
+          <div class="c-pro-wrap">
+            <p class="c-pro" id="proNote"><span class="c-pro__badge">Normal key</span><span>Up to 100,000x. A Pro key unlocks 300,000x and 1,000,000x.</span></p>
+            <form class="c-pro-form" id="proForm" novalidate>
+              <label class="c-label" for="proKey">Pro key</label>
+              <div class="c-pro-row">
+                <input class="c-select c-pro-input" id="proKey" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DIOS-XXXXXX-XXXXXX-…">
+                <button class="c-btn" type="submit" id="proGo">Unlock Pro</button>
+              </div>
+              <p class="c-pro-msg" id="proMsg" role="status"></p>
+            </form>
+          </div>
           <div class="c-knobs">
             <div class="c-knob"><label for="gate">Noise gate <output id="gateV" for="gate">Off</output></label><input class="c-range" type="range" id="gate" min="-90" max="-20" step="1" value="-90"></div>
             <div class="c-knob"><label for="bass">Bass <output id="bassV" for="bass">0 dB</output></label><input class="c-range" type="range" id="bass" min="-12" max="15" step="1" value="0"></div>

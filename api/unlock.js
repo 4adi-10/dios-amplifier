@@ -18,7 +18,7 @@ export async function POST(request) {
   }
   const now = Math.floor(Date.now() / 1000);
   const maxAge = r.exp ? Math.max(60, r.exp - now) : 400 * 86400;
-  return Response.json({ ok: true, exp: r.exp }, {
+  return Response.json({ ok: true, exp: r.exp, pro: !!r.pro }, {
     headers: { 'Set-Cookie': `dios_key=${r.norm}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`, 'Cache-Control': 'no-store' }
   });
 }

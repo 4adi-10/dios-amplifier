@@ -129,3 +129,13 @@ html[data-tier="pro"] .c-chips [data-pro], html[data-tier="pro"] .c-preset--pro 
 html[data-tier="pro"] .c-pro__badge { color: #1a0610; border-color: transparent; background: linear-gradient(90deg, var(--hot), var(--hot-2)); }
 .c-chips button { white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
 .c-preset--pro b { display: inline-flex; align-items: center; }
+.c-pro-wrap { display: grid; gap: 12px; }
+.c-pro-form { display: grid; gap: 8px; margin: 0; }
+.c-pro-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.c-pro-input { font: 500 14px/1 var(--font-mono) !important; letter-spacing: .03em; text-transform: uppercase; color: #fff; background-image: none !important; padding-right: 12px; }
+.c-pro-input::placeholder { color: rgb(255 255 255 / .35); }
+.c-pro-input:focus-visible { outline: none; border-color: var(--hot) !important; box-shadow: 0 0 0 4px rgb(255 61 139 / .18) !important; }
+.c-pro-msg { margin: 0; min-height: 1.3em; font-size: 13px; color: var(--a-mute); }
+.c-pro-msg[data-state="bad"] { color: #ff8fb5; }
+.c-pro-msg[data-state="ok"] { color: #7ef0b4; }
+@media (max-width: 639px) { .c-pro-row { grid-template-columns: minmax(0, 1fr); } }

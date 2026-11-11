@@ -412,12 +412,37 @@
   addEventListener('dios:start', () => keepAwake(true)); addEventListener('dios:stop', () => keepAwake(false));
   document.addEventListener('visibilitychange', () => { if (A && !document.hidden) keepAwake(true); });
 
+  // type a Pro key right here: it replaces this browser's key and unlocks the levels without signing out
+  const proForm = $('proForm');
+  if (proForm) proForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const inp = $('proKey'), msg = $('proMsg'), go = $('proGo');
+    msg.textContent = ''; msg.dataset.state = '';
+    if (!inp.value.trim()) { msg.textContent = 'Paste your Pro key first.'; inp.focus(); return; }
+    go.disabled = true; go.textContent = 'Checking…';
+    try {
+      const r = await fetch('/api/unlock', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: inp.value }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.ok) { msg.textContent = j.error || 'That key did not work.'; msg.dataset.state = 'bad'; }
+      else if (!j.pro) { msg.textContent = 'That is a normal key, so the levels stay at 100,000x. Ask an admin for a Pro key.'; msg.dataset.state = 'bad'; }
+      else {
+        inp.value = ''; msg.textContent = 'Pro unlocked. You can now go up to 1,000,000x.'; msg.dataset.state = 'ok';
+        TIER.pro = true; TIER.maxDb = 120; document.documentElement.dataset.tier = 'pro';
+        const n = $('proNote'); n.firstElementChild.textContent = 'Pro key'; n.lastElementChild.textContent = 'All levels unlocked, up to 1,000,000x (+120 dB).';
+        applyAll(); dispatchEvent(new Event('dios:tier'));
+        setTimeout(() => { proForm.hidden = true; }, 2500);
+      }
+    } catch (err) { msg.textContent = 'Could not reach the server. Check your connection.'; msg.dataset.state = 'bad'; }
+    go.disabled = false; go.textContent = 'Unlock Pro';
+  });
+
   // ask the server what this key unlocks; until it answers, the page acts as a normal key
   document.documentElement.dataset.tier = 'normal';
   fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(j => {
     TIER.pro = !!(j && j.pro); TIER.maxDb = TIER.pro ? 120 : 100;
     document.documentElement.dataset.tier = TIER.pro ? 'pro' : 'normal';
     const n = $('proNote'); if (n && TIER.pro) { n.firstElementChild.textContent = 'Pro key'; n.lastElementChild.textContent = 'All levels unlocked, up to 1,000,000x (+120 dB).'; }
+    if ($('proForm')) $('proForm').hidden = TIER.pro;
     applyAll(); dispatchEvent(new Event('dios:tier'));
   }).catch(() => {});
 
