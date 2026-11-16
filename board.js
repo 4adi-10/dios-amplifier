@@ -175,13 +175,26 @@
     return c;
   };
   const SAFE = curve('safe'), HARD = curve('hard'), SOFT = curve('soft');
+  // harsh max: a gritty square-wave clip pinned at full scale. Everything that comes in
+  // gets driven into it, so even quiet parts of a sound slam at 0 dBFS (the loudest a signal can be).
+  const HARSH = (() => {
+    const n = 4096, c = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = i / (n - 1) * 2 - 1;
+      const y = Math.sign(x) * Math.min(1, Math.pow(Math.abs(x) * 4, .35));   // fold everything up to full scale fast
+      c[i] = y;
+    }
+    return c;
+  })();
+  let mixLim = null, mixClip = null;   // the amp-wide final stage; harsh max opens it up so nothing pulls the clip back down
   const FX_PRESETS = {
     clean: { boost: 0,   ytBoost: 0,   bass: 0,  mid: 0, treble: 0,  mode: 'clear' },
     loud:  { boost: 20,  ytBoost: 20,  bass: 3,  mid: 2, treble: 2,  mode: 'clear' },
     max:   { boost: 60,  ytBoost: 60,  bass: 4,  mid: 3, treble: 3,  mode: 'clear' },
     bass:  { boost: 30,  ytBoost: 30,  bass: 15, mid: 0, treble: -2, mode: 'clear' },
     radio: { boost: 30,  ytBoost: 30,  bass: -8, mid: 8, treble: -4, mode: 'comp' },
-    dist:  { boost: 100, ytBoost: 100, bass: 6,  mid: 0, treble: 0,  mode: 'hard' }
+    dist:  { boost: 100, ytBoost: 100, bass: 6,  mid: 0, treble: 0,  mode: 'hard' },
+    harsh: { boost: 100, ytBoost: 100, bass: 10, mid: 8, treble: 5,  mode: 'harsh' }
   };
   let A = null, bus = null, prev = null;
 
@@ -212,7 +225,7 @@
   const hearOn = b => b === prev || (S.hear && !!$('out').value && !$('monitor').checked);
   function applyBus(b) {
     if (!b) return;
-    const t = b.ctx.currentTime, m = S.mode, clear = m === 'clear', comp = m === 'comp';
+    const t = b.ctx.currentTime, m = S.mode, clear = m === 'clear', comp = m === 'comp', harsh = m === 'harsh';
     b.pads.gain.setTargetAtTime(S.vol / 100, t, .02);
     b.yt.gain.setTargetAtTime(S.ytVol / 100, t, .02);
     b.boost.gain.setTargetAtTime(xOf(S.boost), t, .02);
@@ -226,14 +239,21 @@
     b.comp.ratio.value = clear ? 5 : comp ? 12 : 1;
     b.comp.knee.value = clear ? 12 : comp ? 10 : 0;
     b.comp.attack.value = clear ? .004 : .003; b.comp.release.value = clear ? .2 : .15;
-    b.makeup.gain.setTargetAtTime(clear ? 2.4 : 1, t, .05);
+    b.makeup.gain.setTargetAtTime(harsh ? 60 : clear ? 3.2 : 1, t, .05);   // harsh: drive hard into the clipper
     b.lim.ratio.value = clear || comp ? 20 : 1;
     b.lim.threshold.value = clear || comp ? -1 : 0;
-    b.shaper.curve = clear || comp ? SAFE : m === 'soft' ? SOFT : HARD;
-    b.shaper.oversample = clear || comp ? 'none' : '4x';
+    b.shaper.curve = clear || comp ? SAFE : m === 'soft' ? SOFT : harsh ? HARSH : HARD;
+    b.shaper.oversample = clear || comp || harsh ? 'none' : '4x';   // harsh: no oversampling, keep the aliasing grit
     b.hear.gain.setTargetAtTime(hearOn(b) ? 1 : 0, t, .02);
   }
-  const applyAllBuses = () => { applyBus(bus); applyBus(prev); };
+  const applyMix = () => {
+    if (!mixLim) return;
+    const harsh = S.mode === 'harsh' || (window.DIOS && window.DIOS.micMode && window.DIOS.micMode() === 'harsh');
+    mixLim.threshold.value = harsh ? 0 : -0.8; mixLim.ratio.value = harsh ? 1 : 20;
+    mixClip.curve = harsh ? HARD : SAFE;
+  };
+  addEventListener('dios:micmode', () => applyMix());
+  const applyAllBuses = () => { applyBus(bus); applyBus(prev); applyMix(); };
 
   /* ---------------- playing ---------------- */
   const playing = new Map();   // pad id -> Set of { src, ctx, start, dur }
@@ -491,17 +511,18 @@
     const mix = A.ctx.createGain(), mlim = A.ctx.createDynamicsCompressor(), mclip = A.ctx.createWaveShaper();
     mlim.threshold.value = -0.8; mlim.knee.value = 0; mlim.ratio.value = 20; mlim.attack.value = .001; mlim.release.value = .05;
     mclip.curve = SAFE;
+    mixLim = mlim; mixClip = mclip;
     try { A.master.disconnect(A.dest); A.master.disconnect(A.post); } catch (e) {}
     A.master.connect(mix); mix.connect(mlim).connect(mclip);
     mclip.connect(A.dest); mclip.connect(A.post);
-    bus = makeBus(A.ctx, [mix]);
+    bus = makeBus(A.ctx, [mix]); applyMix();
     window.DIOS.mix = mix; window.DIOS.safeCurve = SAFE; window.DIOS.hardCurve = HARD;   // the music amplifier (music.js) joins the same mix
     hookYT(); paintYT(); startDuck();
     status('Live. Sounds and YouTube go to Discord with your mic.');
   });
   addEventListener('dios:stop', () => {
     playing.forEach((set, id) => { set.forEach(it => { if (bus && it.ctx === bus.ctx) { try { it.src.stop(); } catch (e) {} set.delete(it); } }); if (!set.size) playing.delete(id); });
-    bus = null; A = null; clearTimeout(duckT);
+    bus = null; A = null; mixLim = mixClip = null; clearTimeout(duckT);
     hookYT(); paintYT(); paintPlaying();
     status('The amplifier is off. Sounds play only for you until you press Start.');
   });

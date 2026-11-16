@@ -13,7 +13,8 @@
     bass:  { gain: 300,    gate: -55, bass: 12, mid: 1,  treble: 0,  mode: 'clear' },
     radio: { gain: 300,    gate: -52, bass: -8, mid: 8,  treble: -4, mode: 'comp' },
     dist:  { gain: 100000, gate: -45, bass: 6,  mid: 0,  treble: 0,  mode: 'hard' },
-    ultra: { gain: 100000000, gate: -45, bass: 2,  mid: 5,  treble: 3,  mode: 'clear' }   // Pro keys only
+    harsh: { gain: 100000, gate: -45, bass: 8,  mid: 8,  treble: 4,  mode: 'harsh' },
+    ultra: { gain: 500000000, gate: -45, bass: 2,  mid: 5,  treble: 3,  mode: 'clear' }   // Pro keys only
   };
   const DEF = { gain: 100, gate: -60, bass: 0, mid: 3, treble: 2, mode: 'clear', ns: true, inp: '', out: '', monitor: false, ptt: false, preset: '' };
   let S = { ...DEF };
@@ -37,6 +38,7 @@
     for (let i = 0; i < n; i++) {
       const x = i / (n - 1) * 2 - 1, a = Math.abs(x);
       c[i] = mode === 'hard' ? x
+        : mode === 'harsh' ? Math.sign(x) * Math.min(1, Math.pow(Math.abs(x) * 4, .35))   // square-wave slam at full scale
         : mode === 'safe' ? (a < .8 ? x : Math.sign(x) * (.8 + .17 * Math.tanh((a - .8) / .17)))
         : Math.tanh(2.5 * x) / Math.tanh(2.5);
     }
@@ -50,7 +52,7 @@
   //     -> gain -> gate -> bass -> mid -> treble -> comp -> shaper -> master (mute/ptt) -> analyser
   //                                                                   -> dest (cable / recorder) + monitor
   let A = null, starting = false;
-  window.DIOS = { get A() { return A; }, TIER, locked: () => locked() };   // the soundboard (board.js) mixes into this graph
+  window.DIOS = { get A() { return A; }, TIER, locked: () => locked(), micMode: () => S.mode };   // the soundboard (board.js) mixes into this graph
   let stream = null, src = null, raf = 0, muted = false, talking = false;
   let peakHold = 0, peakAt = 0, clips = 0, clipLatch = false, rec = null, recUrl = '';
   const outEl = new Audio(); const monEl = new Audio();
@@ -107,21 +109,22 @@
     A.mid.gain.setTargetAtTime(S.mid, t, 0.03);
     A.treble.gain.setTargetAtTime(S.treble, t, 0.03);
     if (A.gw) A.gw.parameters.get('threshold').value = S.gate;
-    const m = S.mode, clear = m === 'clear', comp = m === 'comp';
+    const m = S.mode, clear = m === 'clear', comp = m === 'comp', harsh = m === 'harsh';
     // clear: a voice compressor evens out loud and quiet words, makeup brings it up, the limiter holds the peaks
     A.comp.threshold.value = clear ? -26 : comp ? -30 : 0;
     A.comp.ratio.value = clear ? 5 : comp ? 12 : 1;
     A.comp.knee.value = clear ? 12 : comp ? 10 : 0;
     A.comp.attack.value = clear ? 0.004 : 0.003; A.comp.release.value = clear ? 0.2 : 0.15;
-    A.makeup.gain.setTargetAtTime(clear ? 2.4 : 1, t, 0.05);
+    A.makeup.gain.setTargetAtTime(harsh ? 40 : clear ? 3.2 : 1, t, 0.05);   // harsh: drive into the clipper; clear: louder makeup, the limiter still holds the peaks
     A.lim.ratio.value = clear || comp ? 20 : 1;
     A.lim.threshold.value = clear || comp ? -1 : 0;
     A.hp.frequency.value = m === 'hard' || m === 'soft' ? 30 : 85;
     A.shaper.curve = curveFor(clear || comp ? 'safe' : m);
-    A.shaper.oversample = clear || comp ? 'none' : '4x';   // oversampling rings past full scale; the safe curve does not need it
+    A.shaper.oversample = clear || comp || harsh ? 'none' : '4x';   // oversampling rings past full scale; the safe curve does not need it
     $('ns').checked = S.ns;
     setMaster();
     monEl.muted = !S.monitor;
+    dispatchEvent(new Event('dios:micmode'));   // the soundboard opens the final stage when the mic is on Harsh max
   }
 
   function setMaster() {
@@ -450,8 +453,8 @@
       if (!r.ok || !j.ok) { msg.textContent = j.error || 'That key did not work.'; msg.dataset.state = 'bad'; }
       else if (!j.pro) { msg.textContent = 'That is a normal key, so the levels stay at 100,000x. Ask an admin for a Pro key.'; msg.dataset.state = 'bad'; }
       else {
-        inp.value = ''; msg.textContent = 'Pro unlocked. You can now go up to 100,000,000x.'; msg.dataset.state = 'ok';
-        TIER.pro = true; TIER.maxDb = 160; document.documentElement.dataset.tier = 'pro';
+        inp.value = ''; msg.textContent = 'Pro unlocked. You can now go up to 500,000,000x.'; msg.dataset.state = 'ok';
+        TIER.pro = true; TIER.maxDb = 174; document.documentElement.dataset.tier = 'pro';
         keyExp = j.exp || 0; paintTier();
         applyAll(); dispatchEvent(new Event('dios:tier'));
         setTimeout(() => { proForm.hidden = true; }, 2500);
@@ -474,7 +477,7 @@
   const paintTier = () => {
     const n = $('proNote'); if (!n) return;
     n.firstElementChild.textContent = (TIER.pro ? 'Pro key' : 'Normal key') + ' · ' + life(keyExp);
-    n.lastElementChild.textContent = TIER.pro ? 'All levels unlocked, up to 100,000,000x (+160 dB).' : 'Up to 100,000x. A Pro key unlocks up to 100,000,000x.';
+    n.lastElementChild.textContent = TIER.pro ? 'All levels unlocked, up to 500,000,000x (+174 dB).' : 'Up to 100,000x. A Pro key unlocks up to 500,000,000x.';
     if ($('proForm')) $('proForm').hidden = TIER.pro;
   };
   const kicked = reason => {
@@ -485,7 +488,7 @@
   const checkKey = first => fetch('/api/me' + (first ? '?load=1' : ''), { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(j => {
     if (!j || !j.ok) { if (j && (j.reason === 'revoked' || j.reason === 'expired')) kicked(j.reason); return; }
     const was = TIER.pro;
-    TIER.pro = !!j.pro; TIER.maxDb = TIER.pro ? 160 : 100; keyExp = j.exp || 0;
+    TIER.pro = !!j.pro; TIER.maxDb = TIER.pro ? 174 : 100; keyExp = j.exp || 0;
     document.documentElement.dataset.tier = TIER.pro ? 'pro' : 'normal';
     paintTier();
     if (first || was !== TIER.pro) { applyAll(); dispatchEvent(new Event('dios:tier')); }
