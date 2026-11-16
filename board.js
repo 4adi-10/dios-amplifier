@@ -228,7 +228,7 @@
     b.comp.attack.value = clear ? .004 : .003; b.comp.release.value = clear ? .2 : .15;
     b.makeup.gain.setTargetAtTime(clear ? 2.4 : 1, t, .05);
     b.lim.ratio.value = clear || comp ? 20 : 1;
-    b.lim.threshold.value = clear || comp ? -3 : 0;
+    b.lim.threshold.value = clear || comp ? -1 : 0;
     b.shaper.curve = clear || comp ? SAFE : m === 'soft' ? SOFT : HARD;
     b.shaper.oversample = clear || comp ? 'none' : '4x';
     b.hear.gain.setTargetAtTime(hearOn(b) ? 1 : 0, t, .02);
@@ -489,7 +489,7 @@
     A = window.DIOS && window.DIOS.A; if (!A) return;
     // a final limiter on the whole mix: mic and sounds are each limited, but their sum could still pass full scale
     const mix = A.ctx.createGain(), mlim = A.ctx.createDynamicsCompressor(), mclip = A.ctx.createWaveShaper();
-    mlim.threshold.value = -1.5; mlim.knee.value = 0; mlim.ratio.value = 20; mlim.attack.value = .001; mlim.release.value = .05;
+    mlim.threshold.value = -0.8; mlim.knee.value = 0; mlim.ratio.value = 20; mlim.attack.value = .001; mlim.release.value = .05;
     mclip.curve = SAFE;
     try { A.master.disconnect(A.dest); A.master.disconnect(A.post); } catch (e) {}
     A.master.connect(mix); mix.connect(mlim).connect(mclip);
@@ -520,7 +520,7 @@
     ['bdVol', 'bdBoost', 'ytVol', 'ytBoost', 'fxbass', 'fxmid', 'fxtreble'].forEach(id => paintRange($(id)));
   }
   // any hand change clears the highlighted preset, like on the mic
-  // a normal key stops at +100 dB (100,000x); a Pro key goes to +120 dB (1,000,000x), like the mic
+  // a normal key stops at +100 dB (100,000x); a Pro key goes to +160 dB (100,000,000x), like the mic
   const T = () => (window.DIOS && window.DIOS.TIER) || { pro: false, maxDb: 100 };
   const capDb = () => { const m = T().maxDb; S.boost = Math.min(S.boost, m); S.ytBoost = Math.min(S.ytBoost, m); $('bdBoost').max = m; $('ytBoost').max = m; };
   const set = (patch, keepFx) => { Object.assign(S, patch); capDb(); if (!keepFx) S.fx = ''; save(); paintControls(); applyAllBuses(); };

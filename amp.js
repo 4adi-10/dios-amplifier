@@ -13,16 +13,16 @@
     bass:  { gain: 300,    gate: -55, bass: 12, mid: 1,  treble: 0,  mode: 'clear' },
     radio: { gain: 300,    gate: -52, bass: -8, mid: 8,  treble: -4, mode: 'comp' },
     dist:  { gain: 100000, gate: -45, bass: 6,  mid: 0,  treble: 0,  mode: 'hard' },
-    ultra: { gain: 1000000, gate: -45, bass: 2,  mid: 5,  treble: 3,  mode: 'clear' }   // Pro keys only
+    ultra: { gain: 100000000, gate: -45, bass: 2,  mid: 5,  treble: 3,  mode: 'clear' }   // Pro keys only
   };
   const DEF = { gain: 100, gate: -60, bass: 0, mid: 3, treble: 2, mode: 'clear', ns: true, inp: '', out: '', monitor: false, ptt: false, preset: '' };
   let S = { ...DEF };
   try { S = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
-  const toGain = v => Math.pow(10, v / 20);           // slider 0..120 dB -> 1x..1,000,000x
+  const toGain = v => Math.pow(10, v / 20);           // slider 0..160 dB -> 1x..100,000,000x
   /* ---------------- Pro levels ---------------- */
-  // A normal key goes up to 100,000x (+100 dB); a Pro key up to 1,000,000x (+120 dB). /api/me says which.
+  // A normal key goes up to 100,000x (+100 dB); a Pro key up to 100,000,000x (+160 dB). /api/me says which.
   const TIER = { pro: false, maxDb: 100 };
   const capGain = g => Math.min(g, Math.pow(10, TIER.maxDb / 20));
   const locked = () => { const e = $('err'); e.textContent = 'Levels above 100,000x need a Pro key. Ask an admin for one, then sign out and enter it.'; clearTimeout(locked.t); locked.t = setTimeout(() => { if (e.textContent.startsWith('Levels above')) e.textContent = ''; }, 5000); };
@@ -78,7 +78,7 @@
     n.pre.fftSize = 1024;
     n.post.fftSize = 2048; n.post.smoothingTimeConstant = 0.72;
     n.hp.type = 'highpass'; n.hp.frequency.value = 85; n.hp.Q.value = 0.7;   // rumble and desk thumps eat headroom
-    n.lim.threshold.value = -3; n.lim.knee.value = 0; n.lim.ratio.value = 20; n.lim.attack.value = 0.001; n.lim.release.value = 0.06;
+    n.lim.threshold.value = -1; n.lim.knee.value = 0; n.lim.ratio.value = 20; n.lim.attack.value = 0.001; n.lim.release.value = 0.06;
     n.bass.type = 'lowshelf'; n.bass.frequency.value = 140;
     n.mid.type = 'peaking'; n.mid.frequency.value = 2800; n.mid.Q.value = 0.9;
     n.treble.type = 'highshelf'; n.treble.frequency.value = 6500;
@@ -115,7 +115,7 @@
     A.comp.attack.value = clear ? 0.004 : 0.003; A.comp.release.value = clear ? 0.2 : 0.15;
     A.makeup.gain.setTargetAtTime(clear ? 2.4 : 1, t, 0.05);
     A.lim.ratio.value = clear || comp ? 20 : 1;
-    A.lim.threshold.value = clear || comp ? -3 : 0;
+    A.lim.threshold.value = clear || comp ? -1 : 0;
     A.hp.frequency.value = m === 'hard' || m === 'soft' ? 30 : 85;
     A.shaper.curve = curveFor(clear || comp ? 'safe' : m);
     A.shaper.oversample = clear || comp ? 'none' : '4x';   // oversampling rings past full scale; the safe curve does not need it
@@ -450,8 +450,8 @@
       if (!r.ok || !j.ok) { msg.textContent = j.error || 'That key did not work.'; msg.dataset.state = 'bad'; }
       else if (!j.pro) { msg.textContent = 'That is a normal key, so the levels stay at 100,000x. Ask an admin for a Pro key.'; msg.dataset.state = 'bad'; }
       else {
-        inp.value = ''; msg.textContent = 'Pro unlocked. You can now go up to 1,000,000x.'; msg.dataset.state = 'ok';
-        TIER.pro = true; TIER.maxDb = 120; document.documentElement.dataset.tier = 'pro';
+        inp.value = ''; msg.textContent = 'Pro unlocked. You can now go up to 100,000,000x.'; msg.dataset.state = 'ok';
+        TIER.pro = true; TIER.maxDb = 160; document.documentElement.dataset.tier = 'pro';
         keyExp = j.exp || 0; paintTier();
         applyAll(); dispatchEvent(new Event('dios:tier'));
         setTimeout(() => { proForm.hidden = true; }, 2500);
@@ -474,7 +474,7 @@
   const paintTier = () => {
     const n = $('proNote'); if (!n) return;
     n.firstElementChild.textContent = (TIER.pro ? 'Pro key' : 'Normal key') + ' · ' + life(keyExp);
-    n.lastElementChild.textContent = TIER.pro ? 'All levels unlocked, up to 1,000,000x (+120 dB).' : 'Up to 100,000x. A Pro key unlocks 300,000x and 1,000,000x.';
+    n.lastElementChild.textContent = TIER.pro ? 'All levels unlocked, up to 100,000,000x (+160 dB).' : 'Up to 100,000x. A Pro key unlocks up to 100,000,000x.';
     if ($('proForm')) $('proForm').hidden = TIER.pro;
   };
   const kicked = reason => {
@@ -485,7 +485,7 @@
   const checkKey = first => fetch('/api/me' + (first ? '?load=1' : ''), { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(j => {
     if (!j || !j.ok) { if (j && (j.reason === 'revoked' || j.reason === 'expired')) kicked(j.reason); return; }
     const was = TIER.pro;
-    TIER.pro = !!j.pro; TIER.maxDb = TIER.pro ? 120 : 100; keyExp = j.exp || 0;
+    TIER.pro = !!j.pro; TIER.maxDb = TIER.pro ? 160 : 100; keyExp = j.exp || 0;
     document.documentElement.dataset.tier = TIER.pro ? 'pro' : 'normal';
     paintTier();
     if (first || was !== TIER.pro) { applyAll(); dispatchEvent(new Event('dios:tier')); }

@@ -17,7 +17,7 @@
     vocal: { name: 'Vocal clear', note: 'words in front',      boost: 20, loud: .5,  bass: 0,   wide: 0,  mode: 'clear', eq: [-3, -2, -1, 0, 2, 4, 5, 3, 1, 0] },
     night: { name: 'Night',       note: 'quiet parts lifted',  boost: 12, loud: .8,  bass: 0,   wide: 0,  mode: 'clear', eq: [-2, -1, 0, 0, 1, 1, 1, 0, 0, -1] },
     blast: { name: 'Ear blast',   note: '100,000x · hard clip', boost: 100, loud: 1, bass: .6,  wide: 0,  mode: 'hard',  eq: [6, 5, 3, 0, 0, 0, 2, 3, 2, 0] },
-    ultra: { name: 'Ultra',       note: '1,000,000x · Pro',    boost: 120, loud: 1,  bass: .4,  wide: .2, mode: 'clear', eq: [3, 3, 2, 0, -1, 0, 1, 3, 3, 2], pro: true }
+    ultra: { name: 'Ultra',       note: '100,000,000x · Pro', boost: 160, loud: 1,  bass: .4,  wide: .2, mode: 'clear', eq: [3, 3, 2, 0, -1, 0, 1, 3, 3, 2], pro: true }
   };
   const DEF = { vol: 100, boost: 20, loud: .5, bass: .2, wide: .2, mode: 'clear', eq: PRESETS.loud.eq.slice(), preset: 'loud', duck: false, hear: false };
   let S = { ...DEF };
@@ -27,7 +27,7 @@
   const err = t => { $('muErr').textContent = t || ''; };
   const xOf = db => Math.pow(10, db / 20);
   const fmtX = db => { const g = xOf(db); return (g >= 100 ? Math.round(g).toLocaleString('en') : g.toFixed(1).replace(/\.0$/, '')) + 'x'; };
-  // a normal key stops at +100 dB (100,000x), a Pro key at +120 dB (1,000,000x), the same as the mic
+  // a normal key stops at +100 dB (100,000x), a Pro key at +160 dB (100,000,000x), the same as the mic
   const T = () => (window.DIOS && window.DIOS.TIER) || { pro: false, maxDb: 100 };
   const LOCK = '<svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>';
 
