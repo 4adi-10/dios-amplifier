@@ -163,10 +163,21 @@
     } catch (e) { a.gw = null; }   // an old browser: the drawing loop gates instead, while the tab is visible
   }
 
+  const getMic = id => navigator.mediaDevices.getUserMedia({ audio: {
+    deviceId: id ? { exact: id } : undefined,
+    echoCancellation: false, noiseSuppression: !!S.ns, autoGainControl: false } });
+
   async function openMic() {
-    const s = await navigator.mediaDevices.getUserMedia({ audio: {
-      deviceId: S.inp ? { exact: S.inp } : undefined,
-      echoCancellation: false, noiseSuppression: !!S.ns, autoGainControl: false } });
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('this page needs HTTPS (or localhost) and a modern browser to use the microphone.');
+    let s;
+    try { s = await getMic(S.inp); }
+    catch (e) {
+      // the saved mic was unplugged or renamed: Chrome throws OverconstrainedError (with an empty message). Fall back to the default mic.
+      if (!S.inp || !/Overconstrained|NotFound/.test(e.name)) throw e;
+      S.inp = ''; save();
+      const inp = $('inp'); if (inp) inp.value = '';
+      s = await getMic('');
+    }
     if (!A) { s.getTracks().forEach(t => t.stop()); throw new Error('stopped'); }
     if (src) src.disconnect();
     if (stream) stream.getTracks().forEach(t => t.stop());
@@ -194,11 +205,12 @@
       await openMic();
       if (A !== me) return;
       await listDevices();
-      outEl.srcObject = A.dest.stream; await routeOut(); await outEl.play();
+      outEl.srcObject = A.dest.stream; await routeOut();
+      await outEl.play().catch(() => {});   // a blocked autoplay must not kill the amp; the 2 s watchdog retries play()
       monEl.srcObject = A.dest.stream; monEl.muted = !S.monitor;
       // the monitor only makes sense when the main output is not already your speakers
       if (S.out) await monEl.play().catch(() => {});
-      if (A.ctx.state === 'suspended') await A.ctx.resume();
+      if (A.ctx.state === 'suspended') await A.ctx.resume().catch(() => {});
       applyAll();
       $('go').textContent = 'Stop'; $('go').dataset.live = '';
       $('rec').disabled = false;
@@ -206,7 +218,12 @@
       loop();
       dispatchEvent(new Event('dios:start'));
     } catch (e) {
-      $('err').textContent = 'Could not start: ' + (e.name === 'NotAllowedError' ? 'microphone access was blocked. Allow it in the address bar.' : e.message);
+      const why = e && e.name === 'NotAllowedError' ? 'microphone access was blocked. Allow it in the address bar.'
+        : e && e.name === 'NotReadableError' ? 'the microphone is busy in another app (close it, or pick another mic) and try again.'
+        : e && e.name === 'NotFoundError' ? 'no microphone was found. Plug one in and try again.'
+        : (e && (e.message || e.name)) || String(e) || 'unknown error';
+      console.error('[DIOS] start failed', e);
+      $('err').textContent = 'Could not start: ' + why;
       if (!me || A === me) stop();
     } finally { starting = false; }
   }
