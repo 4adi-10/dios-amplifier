@@ -17,7 +17,7 @@
     vocal: { name: 'Vocal clear', note: 'words in front',      boost: 20, loud: .5,  bass: 0,   wide: 0,  mode: 'clear', eq: [-3, -2, -1, 0, 2, 4, 5, 3, 1, 0] },
     night: { name: 'Night',       note: 'quiet parts lifted',  boost: 12, loud: .8,  bass: 0,   wide: 0,  mode: 'clear', eq: [-2, -1, 0, 0, 1, 1, 1, 0, 0, -1] },
     blast: { name: 'Ear blast',   note: '100,000x · hard clip', boost: 100, loud: 1, bass: .6,  wide: 0,  mode: 'hard',  eq: [6, 5, 3, 0, 0, 0, 2, 3, 2, 0] },
-    ultra: { name: 'Ultra',       note: '500,000,000x · Pro', boost: 174, loud: 1,  bass: .4,  wide: .2, mode: 'clear', eq: [3, 3, 2, 0, -1, 0, 1, 3, 3, 2], pro: true }
+    ultra: { name: 'Ultra',       note: '1,000,000,000x · Pro', boost: 180, loud: 1,  bass: .4,  wide: .2, mode: 'clear', eq: [3, 3, 2, 0, -1, 0, 1, 3, 3, 2], pro: true }
   };
   const DEF = { vol: 100, boost: 20, loud: .5, bass: .2, wide: .2, mode: 'clear', eq: PRESETS.loud.eq.slice(), preset: 'loud', duck: false, hear: false };
   let S = { ...DEF };

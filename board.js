@@ -383,6 +383,50 @@
   const ready = () => player && player.getPlayerState;
   const vidNow = () => (ready() && player.getVideoData && player.getVideoData().video_id) || (cur && cur.v) || '';
 
+  /* ---------------- any link: YouTube, a direct audio/video file, or any other site ---------------- */
+  // yt:   YouTube, the synced helper above.
+  // file: a direct .mp3/.mp4/... link (or a file a site serves with CORS) plays in a hidden player here, no share needed.
+  // page: SoundCloud, Spotify, TikTok, Twitch, a radio stream page... opens in its own window and you share that tab.
+  let kind = 'yt', linkUrl = '', pageWin = null, fileEl = null, fileCtx = null, fileOut = null, fileName = '';
+  const MEDIA_EXT = /\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|weba|webm|mp4|m4v|mov|mkv)(\?|#|$)/i;
+  const normUrl = u => { u = (u || '').trim(); return /^https?:/i.test(u) ? u : 'https://' + u; };
+  function linkKind(u) {
+    if (parseYT(u)) return 'yt';
+    let x; try { x = new URL(normUrl(u)); } catch (e) { return null; }
+    if (!/\./.test(x.hostname)) return null;
+    return MEDIA_EXT.test(x.pathname) ? 'file' : 'page';
+  }
+  function ensureFileEl() {
+    if (fileEl) return;
+    fileEl = new Audio(); fileEl.crossOrigin = 'anonymous'; fileEl.preload = 'auto';
+    // a small audio graph of its own, so the sound can move between the preview and the live amp as a stream
+    fileCtx = new AudioContext({ latencyHint: 'interactive' });
+    const s = fileCtx.createMediaElementSource(fileEl); fileOut = fileCtx.createMediaStreamDestination(); s.connect(fileOut);
+    ['play', 'pause', 'ended', 'loadedmetadata'].forEach(ev => fileEl.addEventListener(ev, paintYT));
+    fileEl.addEventListener('error', () => {
+      if (kind !== 'file' || !fileEl.src) return;
+      // most often the site does not allow other pages to read its audio (CORS): fall back to sharing its tab
+      dropYT(); kind = 'page'; openPage(linkUrl);
+      err('That site will not let the amp read the file directly, so it opened in its own window. Press "Send to Discord" and pick that tab.');
+    });
+  }
+  function playFile(u) {
+    ensureFileEl();
+    if (ytStream && ytStream !== fileOut.stream) dropYT();
+    if (fileCtx.state === 'suspended') fileCtx.resume();
+    fileEl.src = u;
+    try { fileName = decodeURIComponent(new URL(u).pathname.split('/').pop()) || new URL(u).hostname; } catch (e) { fileName = u; }
+    fileEl.play().catch(e => { if (e.name !== 'AbortError') err('Could not play this link: ' + e.message); });
+    ytStream = fileOut.stream; hookYT();
+    status(bus ? 'Live. The link plays here and goes to Discord with your mic.' : 'Playing for you. Press Start above to send it to Discord.');
+  }
+  function openPage(u) {
+    pageWin = window.open(u, 'dios-link', 'popup,width=900,height=640');
+    if (!pageWin) { err('The browser blocked the window. Allow pop-ups for this site, then press Play again.'); return false; }
+    status('Opened in its own window. Start the music there, then press "Send to Discord" and pick that tab.');
+    return true;
+  }
+
   function openHelper() {
     const q = new URLSearchParams({ helper: '1' }); const v = vidNow(); if (v) q.set('v', v);
     ytWin = window.open('yt.html?' + q, 'dios-yt', 'popup,width=440,height=330');
@@ -391,9 +435,20 @@
     return true;
   }
   function loadYT() {
-    const id = parseYT($('ytUrl').value);
-    if (!id) { err('That does not look like a YouTube link.'); return; }
-    err(); S.ytUrl = $('ytUrl').value.trim(); save(); cur = id;
+    const raw = $('ytUrl').value, k = linkKind(raw);
+    if (!k) { err('Paste a link: YouTube, SoundCloud, Spotify, a .mp3 or .mp4 file, or any page that plays sound.'); return; }
+    err(); S.ytUrl = raw.trim(); save();
+    if (k !== 'yt') {
+      if (ready()) player.pauseVideo();
+      if (kind === 'file' && fileEl && k !== 'file') fileEl.pause();
+      if (ytStream && (kind !== k || k === 'file')) dropYT();
+      kind = k; linkUrl = normUrl(raw); $('ytFrame').hidden = true;
+      k === 'file' ? playFile(linkUrl) : openPage(linkUrl);
+      paintYT(); return;
+    }
+    if (kind !== 'yt') { if (fileEl) fileEl.pause(); if (ytStream) dropYT(); }
+    kind = 'yt';
+    const id = parseYT(raw); cur = id;
     // the helper must open inside this click, or the pop-up blocker stops it
     if (!helperAlive() && !(ytWin && !ytWin.closed)) openHelper();
     $('ytFrame').hidden = false;
@@ -417,7 +472,7 @@
   // only one of the two players is ever heard: the helper when it is open, this one when it is not
   function applyMute() {
     if (!ready()) return;
-    const quiet = helperAlive() || ytStream;
+    const quiet = kind !== 'yt' || helperAlive() || ytStream;
     if (quiet && !player.isMuted()) player.mute();
     else if (!quiet && player.isMuted()) player.unMute();
   }
@@ -437,9 +492,11 @@
   }
   async function connectYT() {
     err();
-    if (ytStream) { dropYT(); return; }
-    if (!cur) { err('Paste a YouTube link and press Play first.'); return; }
-    if (!helperAlive() && !(ytWin && !ytWin.closed)) {
+    if (ytStream) { dropYT(); if (kind === 'file' && fileEl) fileEl.pause(); return; }
+    if (kind === 'file') { if (linkUrl) playFile(linkUrl); else err('Paste a link and press Play first.'); paintYT(); return; }
+    if (kind === 'yt' && !cur) { err('Paste a link and press Play first.'); return; }
+    if (kind === 'page' && !(pageWin && !pageWin.closed)) { if (!linkUrl || !openPage(linkUrl)) err('Paste a link and press Play first.'); return; }
+    if (kind === 'yt' && !helperAlive() && !(ytWin && !ytWin.closed)) {
       if (openHelper()) status('Helper opened. Press "Send YouTube to Discord" again and pick the DIOS helper tab.');
       return;
     }
@@ -453,37 +510,54 @@
       });
       if (!s.getAudioTracks().length) {
         s.getTracks().forEach(t => t.stop());
-        err('No sound came through. Pick the DIOS helper tab (not a window or screen) and keep "Also share tab audio" on.');
+        err('No sound came through. Pick the ' + (kind === 'yt' ? 'DIOS helper' : 'music') + ' tab (not a window or screen) and keep "Also share tab audio" on.');
         return;
       }
       s.getVideoTracks().forEach(t => { t.enabled = false; });   // only the sound is used
       ytStream = s;
       s.getAudioTracks()[0].addEventListener('ended', dropYT);
       hookYT(); applyMute(); pushSync();
-      status(bus ? 'Live. The video plays here and its sound goes to Discord with your mic.' : 'YouTube is connected. Press Start above to send it to Discord.');
+      status(bus ? 'Live. ' + (kind === 'yt' ? 'The video plays here and its' : 'That tab\'s') + ' sound goes to Discord with your mic.' : 'Connected. Press Start above to send it to Discord.');
     } catch (e) {
-      if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') err('Could not share the helper tab: ' + e.message);
+      if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') err('Could not share the tab: ' + e.message);
     }
     paintYT();
   }
   function dropYT() {
     if (ytSrc) { try { ytSrc.disconnect(); } catch (e) {} ytSrc = null; }
-    if (ytStream) ytStream.getTracks().forEach(t => t.stop());
+    if (ytStream && !(fileOut && ytStream === fileOut.stream)) ytStream.getTracks().forEach(t => t.stop());
     ytStream = null; applyMute(); paintYT();
   }
-  const ytToggle = () => { if (!ready()) return; const st = player.getPlayerState(); st === 1 || st === 3 ? player.pauseVideo() : player.playVideo(); };
-  const ytSeek = by => { if (!ready()) return; player.seekTo(Math.max(0, player.getCurrentTime() + by), true); setTimeout(pushSync, 50); };
+  const ytToggle = () => {
+    if (kind === 'file' && fileEl) { if (fileEl.paused) { if (fileCtx.state === 'suspended') fileCtx.resume(); fileEl.play().catch(() => {}); if (!ytStream) { ytStream = fileOut.stream; hookYT(); } } else fileEl.pause(); return; }
+    if (kind === 'page') { status('Play and pause in the music window.'); try { pageWin && pageWin.focus(); } catch (e) {} return; }
+    if (!ready()) return; const st = player.getPlayerState(); st === 1 || st === 3 ? player.pauseVideo() : player.playVideo(); };
+  const ytSeek = by => {
+    if (kind === 'file' && fileEl) { fileEl.currentTime = Math.max(0, (fileEl.currentTime || 0) + by); return; }
+    if (kind === 'page') return;
+    if (!ready()) return; player.seekTo(Math.max(0, player.getCurrentTime() + by), true); setTimeout(pushSync, 50); };
   function paintYT() {
     const chip = $('ytChip'), on = !!ytStream;
     chip.dataset.state = on ? (bus ? 'live' : 'muted') : 'off';
     $('ytChipText').textContent = on ? (bus ? 'To Discord' : 'Only you') : 'Not sent';
-    $('ytConnect').textContent = on ? 'Stop sending YouTube' : 'Send YouTube to Discord';
+    $('ytConnect').textContent = on ? 'Stop sending' : 'Send to Discord';
     $('ytConnect').toggleAttribute('data-live', on);
+    const h = $('ytHelper');
+    if (kind === 'file') {
+      $('ytNow').textContent = !fileEl || !fileEl.src ? 'Nothing loaded yet.' : (fileEl.paused ? 'Paused: ' : 'Playing: ') + fileName;
+      h.textContent = on ? 'Plays here directly, no extra window needed.' : 'Press Send to Discord to play it again.'; delete h.dataset.warn; return;
+    }
+    if (kind === 'page') {
+      let host = ''; try { host = new URL(linkUrl).hostname.replace(/^www\./, ''); } catch (e) {}
+      const open = pageWin && !pageWin.closed;
+      $('ytNow').textContent = host ? (on ? 'Sending: ' : 'Opened: ') + host : 'Nothing loaded yet.';
+      h.textContent = on ? 'Sending that tab\'s sound. You can minimize it.' : open ? 'Start the music in that window, then Send to Discord and pick its tab.' : 'The window is closed. Press Play to open it again.';
+      delete h.dataset.warn; return;
+    }
     const d = ready() && player.getVideoData ? player.getVideoData() : null, st = ready() ? player.getPlayerState() : -1;
     const title = d && d.title;
     $('ytNow').textContent = !title ? 'Nothing loaded yet.'
       : (st === 1 ? 'Playing: ' : st === 2 ? 'Paused: ' : '') + title;
-    const h = $('ytHelper');
     h.textContent = helperStuck ? 'Click the DIOS helper window once so its sound can start.'
       : helperAlive() ? (on ? 'Helper sending sound. You can minimize it.' : 'Helper open. Now send it to Discord.')
       : cur ? 'Helper closed. Send to Discord opens it again.' : '';

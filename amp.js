@@ -14,9 +14,9 @@
     radio: { gain: 300,    gate: -52, bass: -8, mid: 8,  treble: -4, mode: 'comp' },
     dist:  { gain: 100000, gate: -45, bass: 6,  mid: 0,  treble: 0,  mode: 'hard' },
     harsh: { gain: 100000, gate: -45, bass: 8,  mid: 8,  treble: 4,  mode: 'harsh' },
-    ultra: { gain: 500000000, gate: -45, bass: 2,  mid: 5,  treble: 3,  mode: 'clear' }   // Pro keys only
+    ultra: { gain: 1000000000, gate: -45, bass: 2,  mid: 5,  treble: 3,  mode: 'clear' }   // Pro keys only
   };
-  const DEF = { gain: 100, gate: -60, bass: 0, mid: 3, treble: 2, mode: 'clear', ns: true, inp: '', out: '', monitor: false, ptt: false, preset: '' };
+  const DEF = { gain: 100, gate: -60, bass: 0, mid: 3, treble: 2, mode: 'clear', ns: true, inp: '', out: '', monitor: false, ptt: false, preset: '', voice: 'off', ttsLang: 'en' };
   let S = { ...DEF };
   try { S = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
@@ -54,6 +54,7 @@
   let A = null, starting = false;
   window.DIOS = { get A() { return A; }, TIER, locked: () => locked(), micMode: () => S.mode };   // the soundboard (board.js) mixes into this graph
   let stream = null, src = null, raf = 0, muted = false, talking = false;
+  let ttsLive = 0;
   let peakHold = 0, peakAt = 0, clips = 0, clipLatch = false, rec = null, recUrl = '';
   const outEl = new Audio(); const monEl = new Audio();
   outEl.autoplay = true; monEl.autoplay = true;
@@ -75,7 +76,12 @@
       shaper: ctx.createWaveShaper(),
       master: ctx.createGain(),
       post: ctx.createAnalyser(),
-      dest: ctx.createMediaStreamDestination()
+      dest: ctx.createMediaStreamDestination(),
+      // voice changer: in -> [pitch] -> [ring mod] -> [band] -> [drive] -> out, with echo / cave sends
+      vin: ctx.createGain(), vout: ctx.createGain(), tts: ctx.createGain(),
+      ring: ctx.createGain(), ringOsc: ctx.createOscillator(), bhp: ctx.createBiquadFilter(), blp: ctx.createBiquadFilter(),
+      vdrive: ctx.createWaveShaper(), delay: ctx.createDelay(1), fb: ctx.createGain(), wet: ctx.createGain(),
+      conv: ctx.createConvolver(), cwet: ctx.createGain(), pitch: null
     };
     n.pre.fftSize = 1024;
     n.post.fftSize = 2048; n.post.smoothingTimeConstant = 0.72;
@@ -85,7 +91,18 @@
     n.mid.type = 'peaking'; n.mid.frequency.value = 2800; n.mid.Q.value = 0.9;
     n.treble.type = 'highshelf'; n.treble.frequency.value = 6500;
     n.shaper.oversample = '4x';
-    n.gain.connect(n.hp).connect(n.gate).connect(n.bass).connect(n.mid).connect(n.treble).connect(n.comp).connect(n.makeup).connect(n.lim).connect(n.shaper).connect(n.master);
+    n.ringOsc.connect(n.ring.gain); n.ringOsc.start();
+    n.bhp.type = 'highpass'; n.blp.type = 'lowpass';
+    n.vdrive.curve = (() => { const c = new Float32Array(2048); for (let i = 0; i < 2048; i++) { const x = i / 1023.5 - 1; c[i] = Math.tanh(3 * x); } return c; })();
+    n.conv.buffer = (() => {   // a dark 2.6 s cave: decaying noise, slightly different per ear
+      const len = Math.round(ctx.sampleRate * 2.6), b = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+      return b;
+    })();
+    n.tts.connect(n.vin);   // Type to talk enters here: it gets the voice changer, EQ and limiter, not the mic boost
+    n.gain.connect(n.hp).connect(n.gate).connect(n.vin);
+    n.vin.connect(n.vout);
+    n.vout.connect(n.bass).connect(n.mid).connect(n.treble).connect(n.comp).connect(n.makeup).connect(n.lim).connect(n.shaper).connect(n.master);
     n.master.connect(n.post); n.master.connect(n.dest);
     return n;
   }
@@ -127,8 +144,51 @@
     dispatchEvent(new Event('dios:micmode'));   // the soundboard opens the final stage when the mic is on Harsh max
   }
 
+  /* ---------------- voice changer ---------------- */
+  // pitch: <1 deeper, >1 higher; ring: robot / alien tone (Hz); band: phone or radio; drive: grit; echo / cave: space
+  const VOICES = {
+    off:      {},
+    chipmunk: { pitch: 1.85 },
+    high:     { pitch: 1.35, band: [180, 9000] },
+    deep:     { pitch: 0.72 },
+    demon:    { pitch: 0.55, drive: true, cave: .35 },
+    robot:    { ring: 55, band: [250, 6000] },
+    alien:    { pitch: 1.25, ring: 380 },
+    radio:    { band: [500, 3000], drive: true },
+    echo:     { echo: [.3, .45] },
+    cave:     { cave: .7 },
+    ghost:    { pitch: 0.9, echo: [.42, .35], cave: .5 }
+  };
+  function applyVoice() {
+    if (!A) return;
+    const a = A, v = VOICES[S.voice] || VOICES.off;
+    [a.vin, a.ring, a.bhp, a.blp, a.vdrive, a.delay, a.fb, a.wet, a.conv, a.cwet].forEach(x => { try { x.disconnect(); } catch (e) {} });
+    if (a.pitch) try { a.pitch.disconnect(); } catch (e) {}
+    let node = a.vin;
+    const to = x => { node.connect(x); node = x; };
+    if (v.pitch && a.pitch) { a.pitch.parameters.get('ratio').value = v.pitch; to(a.pitch); }
+    if (v.ring) { a.ring.gain.value = 0; a.ringOsc.frequency.value = v.ring; to(a.ring); }
+    if (v.band) { a.bhp.frequency.value = v.band[0]; a.blp.frequency.value = v.band[1]; to(a.bhp); to(a.blp); }
+    if (v.drive) to(a.vdrive);
+    node.connect(a.vout);
+    if (v.echo) {
+      a.delay.delayTime.value = v.echo[0]; a.fb.gain.value = v.echo[1]; a.wet.gain.value = .6;
+      node.connect(a.delay); a.delay.connect(a.fb).connect(a.delay); a.delay.connect(a.wet).connect(a.vout);
+    }
+    if (v.cave) { a.cwet.gain.value = v.cave; node.connect(a.conv); a.conv.connect(a.cwet).connect(a.vout); }
+    $('voice').value = S.voice;
+    if (v.pitch && !a.pitch) $('err').textContent = 'This browser cannot change pitch, so only part of this voice works. Use Chrome or Edge.';
+  }
+  async function addPitch(a) {
+    try {
+      await a.ctx.audioWorklet.addModule('voice-worklet.js');
+      if (A !== a) return;
+      a.pitch = new AudioWorkletNode(a.ctx, 'dios-pitch', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+    } catch (e) { a.pitch = null; }
+  }
+
   function setMaster() {
-    const open = !muted && (!S.ptt || talking);
+    const open = !muted && (!S.ptt || talking || ttsLive > 0);
     if (A) A.master.gain.setTargetAtTime(open ? 1 : 0, A.ctx.currentTime, 0.01);
     const chip = $('chip');
     if (!A) { chip.dataset.state = 'off'; $('chipText').textContent = 'Off'; return; }
@@ -205,6 +265,8 @@
       me = A = build();
       await addGate(me);
       if (A !== me) return;
+      await addPitch(me);
+      if (A !== me) return;
       await openMic();
       if (A !== me) return;
       await listDevices();
@@ -214,7 +276,7 @@
       // the monitor only makes sense when the main output is not already your speakers
       if (S.out) await monEl.play().catch(() => {});
       if (A.ctx.state === 'suspended') await A.ctx.resume().catch(() => {});
-      applyAll();
+      applyAll(); applyVoice();
       $('go').textContent = 'Stop'; $('go').dataset.live = '';
       $('rec').disabled = false;
       $('status').textContent = S.out ? 'Live. Sending to the selected output.' : 'Live on your default output. Pick CABLE Input to send it to Discord.';
@@ -238,7 +300,7 @@
     if (stream) stream.getTracks().forEach(t => t.stop());
     outEl.pause(); monEl.pause(); outEl.srcObject = null; monEl.srcObject = null;
     if (A) A.ctx.close();
-    A = null; stream = null; src = null;
+    A = null; stream = null; src = null; ttsLive = 0; ttsSrc = null;
     $('go').textContent = 'Start'; delete $('go').dataset.live;
     $('rec').disabled = true;
     $('bar').style.width = '0'; $('peak').style.left = '0';
@@ -382,6 +444,52 @@
     S.out = e.target.value; save();
     if (A) { await routeOut(); if (S.out) monEl.play().catch(() => {}); }
   });
+  $('voice').addEventListener('change', e => { S.voice = e.target.value; save(); applyVoice(); });
+  document.querySelectorAll('[data-voice]').forEach(b => b.addEventListener('click', () => { S.voice = b.dataset.voice; save(); $('voice').value = S.voice; applyVoice(); }));
+  $('voice').value = S.voice;
+
+  /* ---------------- type to talk ---------------- */
+  // the text is spoken by a voice service (through /api/tts), then played into the amp after the mic boost,
+  // so it gets the voice changer, EQ and limiter and Discord hears it like your mic
+  $('ttsLang').value = S.ttsLang;
+  $('ttsLang').addEventListener('change', e => { S.ttsLang = e.target.value; save(); });
+  const ttsCache = new Map();
+  let ttsSrc = null;
+  async function speak() {
+    const text = $('ttsText').value.trim();
+    if (!text) { $('err').textContent = 'Type something to say.'; return; }
+    $('err').textContent = '';
+    const btn = $('ttsGo'); btn.disabled = true; btn.textContent = 'Loading…';
+    try {
+      const k = S.ttsLang + '|' + text;
+      let bytes = ttsCache.get(k);
+      if (!bytes) {
+        const r = await fetch('/api/tts?' + new URLSearchParams({ text, lang: S.ttsLang }), { credentials: 'same-origin' });
+        if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'The voice service did not answer.'); }
+        bytes = await r.arrayBuffer(); ttsCache.set(k, bytes);
+        if (ttsCache.size > 30) ttsCache.delete(ttsCache.keys().next().value);
+      }
+      if (!A) {   // the amp is off: just let you hear it
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'audio/mpeg' }));
+        const au = new Audio(url); au.onended = () => URL.revokeObjectURL(url); await au.play();
+        $('status').textContent = 'Played only for you. Press Start to say it in Discord.';
+        return;
+      }
+      const buf = await A.ctx.decodeAudioData(bytes.slice(0));
+      if (ttsSrc) try { ttsSrc.stop(); } catch (e) {}
+      const s = A.ctx.createBufferSource(); s.buffer = buf; s.connect(A.tts);
+      ttsLive++; setMaster();
+      s.onended = () => { ttsLive = Math.max(0, ttsLive - 1); if (ttsSrc === s) ttsSrc = null; setMaster(); };
+      ttsSrc = s; s.start();
+      $('status').textContent = 'Saying it in Discord.';
+    } catch (e) {
+      $('err').textContent = 'Could not speak: ' + (e.message || e.name);
+    } finally { btn.disabled = false; btn.textContent = 'Say it'; }
+  }
+  $('ttsGo').addEventListener('click', speak);
+  $('ttsText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); speak(); } });
+  $('ttsStop').addEventListener('click', () => { if (ttsSrc) try { ttsSrc.stop(); } catch (e) {} });
+
   $('go').addEventListener('click', () => { if (starting) return; A ? stop() : start(); });
   $('rec').addEventListener('click', record);
   $('play').addEventListener('click', playTest);
@@ -453,8 +561,8 @@
       if (!r.ok || !j.ok) { msg.textContent = j.error || 'That key did not work.'; msg.dataset.state = 'bad'; }
       else if (!j.pro) { msg.textContent = 'That is a normal key, so the levels stay at 100,000x. Ask an admin for a Pro key.'; msg.dataset.state = 'bad'; }
       else {
-        inp.value = ''; msg.textContent = 'Pro unlocked. You can now go up to 500,000,000x.'; msg.dataset.state = 'ok';
-        TIER.pro = true; TIER.maxDb = 174; document.documentElement.dataset.tier = 'pro';
+        inp.value = ''; msg.textContent = 'Pro unlocked. You can now go up to 1,000,000,000x.'; msg.dataset.state = 'ok';
+        TIER.pro = true; TIER.maxDb = 180; document.documentElement.dataset.tier = 'pro';
         keyExp = j.exp || 0; paintTier();
         applyAll(); dispatchEvent(new Event('dios:tier'));
         setTimeout(() => { proForm.hidden = true; }, 2500);
@@ -477,7 +585,7 @@
   const paintTier = () => {
     const n = $('proNote'); if (!n) return;
     n.firstElementChild.textContent = (TIER.pro ? 'Pro key' : 'Normal key') + ' · ' + life(keyExp);
-    n.lastElementChild.textContent = TIER.pro ? 'All levels unlocked, up to 500,000,000x (+174 dB).' : 'Up to 100,000x. A Pro key unlocks up to 500,000,000x.';
+    n.lastElementChild.textContent = TIER.pro ? 'All levels unlocked, up to 1,000,000,000x (+180 dB).' : 'Up to 100,000x. A Pro key unlocks up to 1,000,000,000x.';
     if ($('proForm')) $('proForm').hidden = TIER.pro;
   };
   const kicked = reason => {
@@ -488,7 +596,7 @@
   const checkKey = first => fetch('/api/me' + (first ? '?load=1' : ''), { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(j => {
     if (!j || !j.ok) { if (j && (j.reason === 'revoked' || j.reason === 'expired')) kicked(j.reason); return; }
     const was = TIER.pro;
-    TIER.pro = !!j.pro; TIER.maxDb = TIER.pro ? 174 : 100; keyExp = j.exp || 0;
+    TIER.pro = !!j.pro; TIER.maxDb = TIER.pro ? 180 : 100; keyExp = j.exp || 0;
     document.documentElement.dataset.tier = TIER.pro ? 'pro' : 'normal';
     paintTier();
     if (first || was !== TIER.pro) { applyAll(); dispatchEvent(new Event('dios:tier')); }
