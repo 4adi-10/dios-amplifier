@@ -65,6 +65,7 @@
     <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>DIOS Amplifier</a>
     <nav class="nav__links" aria-label="Main">
       <div class="nav__item"><a class="nav__link" href="#amp">Amplifier</a></div>
+      <div class="nav__item"><a class="nav__link" href="#music">Music</a></div>
       <div class="nav__item"><a class="nav__link" href="#board">Soundboard</a></div>
       <div class="nav__item">
         <a class="nav__link" href="#features">Features <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
@@ -90,7 +91,6 @@
         </div>
       </div>
       <div class="nav__item"><a class="nav__link" href="#setup">Setup</a></div>
-      <div class="nav__item"><a class="nav__link" href="#extension">Extension</a></div>
       <div class="nav__item"><a class="nav__link" href="#questions">Questions</a></div>
     </nav>
     <div class="nav__actions">
@@ -236,6 +236,78 @@
     </div>
   </section>
 
+
+  <!-- MUSIC AMPLIFIER: any tab, the whole computer or your own files, made loud and added to what Discord hears. -->
+  <section class="section" id="music" aria-labelledby="music-h" style="--h: 2">
+    <div class="wrap">
+      <div class="grid">
+        <h2 id="music-h" class="span-5"><span class="hl">Music</span> amplifier for any PC audio</h2>
+        <p class="span-6 start-7 muted t-lead">Send a Chrome tab, the whole computer or your own files to Discord. A three-band maximizer and a 10-band EQ make music loud and full, up to 100,000x, or 1,000,000x with a Pro key.</p>
+      </div>
+      <div class="console lg ui amp-ui" id="musicConsole">
+        <div class="console__pane m-rack">
+          <div class="c-head"><p class="c-title">Source</p><span class="amp-chip" id="muChip" data-state="off"><i></i><span id="muChipText">No source</span></span></div>
+          <div class="c-group">
+            <button class="c-go" type="button" id="muCapture">Connect PC audio</button>
+            <p class="b-now" id="muSrc">Nothing connected</p>
+            <p class="b-hint">In the share box pick a <b>Chrome tab</b> (Spotify, YouTube) or <b>Entire screen</b> (games, apps) and switch on <b>Also share audio</b>.</p>
+          </div>
+          <div class="c-group">
+            <span class="c-label">Your music files</span>
+            <label class="m-file">Add music files<input type="file" id="muFiles" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" multiple></label>
+            <div class="b-ctl">
+              <button class="c-btn" type="button" id="muPrev">Back</button>
+              <button class="c-btn" type="button" id="muPlay">Play</button>
+              <button class="c-btn" type="button" id="muNext">Next</button>
+            </div>
+            <input class="c-range" type="range" id="muSeek" min="0" max="1000" step="1" value="0" aria-label="Position in the song">
+            <p class="m-time" id="muTime">0:00 / 0:00</p>
+            <div class="m-list" id="muList"></div>
+            <p class="b-hint" id="muEmpty">No files yet. Drop mp3, wav or flac files anywhere on this panel.</p>
+            <audio id="muPlayer" preload="auto"></audio>
+          </div>
+          <div class="c-group">
+            <label class="c-switch">Lower music while I talk <input type="checkbox" id="muDuck"></label>
+            <label class="c-switch">Hear the boosted music myself <input type="checkbox" id="muHear"></label>
+          </div>
+          <div class="c-group">
+            <span class="c-label">Discord settings that keep music loud</span>
+            <ul class="m-tips">
+              <li><b>Noise suppression</b> off (Krisp treats music as noise)</li>
+              <li><b>Echo cancellation</b> off</li>
+              <li><b>Automatic gain control</b> off</li>
+            </ul>
+          </div>
+        </div>
+        <div class="console__pane">
+          <div class="c-top">
+            <div class="c-read"><b>Music amp</b><span>Loud and clear by default. Ear blast clips on purpose.</span></div>
+          </div>
+          <div class="m-scope"><canvas id="muScope" width="1600" height="240" aria-label="Live spectrum of the boosted music" role="img"></canvas></div>
+          <div class="m-presets" id="muPresets"></div>
+          <div class="c-knob"><label for="muBoost">Music boost <output id="muBoostV" for="muBoost">10x · +20 dB</output></label><input class="c-range" type="range" id="muBoost" min="0" max="100" step="0.1" value="20"><div class="c-chips b-chips"><button type="button" data-mux="1">1x</button><button type="button" data-mux="10">10x</button><button type="button" data-mux="100">100x</button><button type="button" data-mux="1000">1000x</button><button type="button" data-mux="10000">10,000x</button><button type="button" data-mux="100000">100,000x</button><button type="button" data-mux="1000000" data-pro><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/><rect x="2.5" y="5.5" width="7" height="5" rx="1.2"/></svg>1,000,000x</button></div></div>
+          <div class="c-knobs m-knobs">
+            <div class="c-knob"><label for="muVol">Volume <output id="muVolV" for="muVol">100%</output></label><input class="c-range" type="range" id="muVol" min="0" max="300" step="1" value="100"></div><div class="c-knob"><label for="muLoud">Loudness <output id="muLoudV" for="muLoud">50%</output></label><input class="c-range" type="range" id="muLoud" min="0" max="1" step="0.01" value="0.5"></div><div class="c-knob"><label for="muBass">Bass enhancer <output id="muBassV" for="muBass">20%</output></label><input class="c-range" type="range" id="muBass" min="0" max="1" step="0.01" value="0.2"></div><div class="c-knob"><label for="muWide">Stereo width <output id="muWideV" for="muWide">20%</output></label><input class="c-range" type="range" id="muWide" min="0" max="1" step="0.01" value="0.2"></div>
+          </div>
+          <div class="c-group">
+            <div class="m-eqhead"><span class="c-label">10-band EQ, −12 to +12 dB</span><button class="c-btn" type="button" id="muEqReset">Flatten EQ</button></div>
+            <div class="m-eq" id="muEq"></div>
+          </div>
+          <div class="c-row2">
+            <div class="c-group">
+              <label class="c-label" for="muMode">Limiter (music)</label>
+              <select class="c-select" id="muMode">
+                <option value="clear">Loud and clear (no distortion)</option>
+                <option value="hard">Hard clip (harsh, ear blast)</option>
+              </select>
+            </div>
+            <p class="c-status" id="muStatus">Press Start above, then connect PC audio or add files.</p>
+          </div>
+          <p class="c-err" id="muErr" role="alert"></p>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- SOUNDBOARD: sounds and YouTube mix into the amp's output, so Discord hears them with the boosted mic. -->
   <section class="section" id="board" aria-labelledby="board-h" style="--h: 2">
@@ -431,7 +503,7 @@
           <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>DIOS Amplifier</a>
           <p class="footer__lede">A free mic booster for Discord voice chat.</p>
         </div>
-        <div class="span-2 footer__col"><h4>Amplifier</h4><ul><li><a href="#amp">Console</a></li><li><a href="#board">Soundboard</a></li><li><a href="#features">Features</a></li></ul></div>
+        <div class="span-2 footer__col"><h4>Amplifier</h4><ul><li><a href="#amp">Console</a></li><li><a href="#music">Music amp</a></li><li><a href="#board">Soundboard</a></li><li><a href="#features">Features</a></li></ul></div>
         <div class="span-2 footer__col"><h4>Setup</h4><ul><li><a href="#setup">VB-Cable</a></li><li><a href="#extension">Extension</a></li></ul></div>
         <div class="span-2 footer__col"><h4>Help</h4><ul><li><a href="#questions">Questions</a></li><li><a href="/api/lock">Sign out</a></li></ul></div>
       </div>
@@ -449,6 +521,7 @@
 <script type="module" src="assets/diagrams/mount.js"></script>
 <script src="amp.js"></script>
 <script src="board.js"></script>
+<script src="music.js"></script>
 <script src="studio.js"></script>
 <script>
 /* the DIOS logo loops like a GIF: muted, no controls, paused when off screen or when motion is reduced */

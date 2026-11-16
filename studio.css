@@ -64,9 +64,9 @@ html[data-live] .core-tag--out i { animation: core-blink 1.2s ease-in-out infini
 .hero__dock li::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--hot); box-shadow: 0 0 10px var(--hot); }
 
 /* ---------- the consoles: a light runs round the rim while live ---------- */
-:is(#amp, #board) .console { transition: box-shadow 160ms linear; }
-html[data-live] :is(#amp, #board) .console { box-shadow: var(--lg-shadow), 0 0 calc(var(--lvl) * 120px) calc(var(--lvl) * 6px) rgb(255 61 139 / calc(var(--lvl) * .55)) !important; }
-html[data-live] :is(#amp, #board) .console::after {
+:is(#amp, #board, #music) .console { transition: box-shadow 160ms linear; }
+html[data-live] :is(#amp, #board, #music) .console { box-shadow: var(--lg-shadow), 0 0 calc(var(--lvl) * 120px) calc(var(--lvl) * 6px) rgb(255 61 139 / calc(var(--lvl) * .55)) !important; }
+html[data-live] :is(#amp, #board, #music) .console::after {
   padding: 1.5px;
   background: conic-gradient(from var(--ang), transparent 0deg, var(--hot) 40deg, #ffd0e2 70deg, var(--hot-2) 100deg, transparent 150deg, transparent 360deg) !important;
   animation: rim 3.2s linear infinite;
@@ -113,7 +113,7 @@ html[data-live] :is(#amp, #board) .console::after {
 
 /* ---------- calm when asked ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .hl, .close__word, .c-go, .mini__wave i, .mini__bands span i, .mini__wave::after, html[data-live] :is(#amp, #board) .console::after, html[data-live] .core-tag--out i { animation: none !important; }
+  .hl, .close__word, .c-go, .mini__wave i, .mini__bands span i, .mini__wave::after, html[data-live] :is(#amp, #board, #music) .console::after, html[data-live] .core-tag--out i { animation: none !important; }
   .core-logo { transform: translate(-50%, -50%); }
 }
 [hidden] { display: none !important; }
@@ -139,3 +139,43 @@ html[data-tier="pro"] .c-pro__badge { color: #1a0610; border-color: transparent;
 .c-pro-msg[data-state="bad"] { color: #ff8fb5; }
 .c-pro-msg[data-state="ok"] { color: #7ef0b4; }
 @media (max-width: 639px) { .c-pro-row { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- music amplifier console (same glass sheet as the soundboard) ---------- */
+#music .console { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); margin-top: var(--s-7); border-radius: 28px; overflow: hidden; }
+#music .console > * { position: relative; z-index: 1; }
+#music .c-go { width: 100%; }
+#music .c-read b { font-size: clamp(36px, 4vw, 56px); }
+.m-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.m-presets .c-preset { grid-template-columns: minmax(0, 1fr); gap: 2px; text-align: left; }
+.m-presets .c-preset b { display: inline-flex; align-items: center; }
+.m-presets .c-preset span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-knobs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.m-scope canvas { display: block; width: 100%; height: 120px; border-radius: 16px; background: rgb(0 0 0 / .28); border: 1px solid rgb(255 255 255 / .1); }
+.m-eq { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; padding: 14px 12px 10px; border-radius: 16px; background: rgb(0 0 0 / .2); border: 1px solid rgb(255 255 255 / .1); }
+.m-band { display: grid; justify-items: center; gap: 6px; font: 400 12px/1 var(--font-mono); color: var(--a-mute); }
+.m-band output { color: #fff; min-height: 1em; }
+.m-vr { writing-mode: vertical-lr; direction: rtl; width: 24px; height: 132px; margin: 0; accent-color: var(--hot); cursor: pointer; background: transparent; }
+.m-eqhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.m-eqhead .c-btn { height: 32px; padding: 0 12px; font-size: 13px; }
+.m-list { display: grid; gap: 4px; max-height: 148px; overflow: auto; }
+.m-list:empty { display: none; }
+.m-track { height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid rgb(255 255 255 / .1); background: rgb(255 255 255 / .04); color: var(--a-ink-2); font: 400 13px/1 var(--font-text); text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: border-color 140ms, background-color 140ms; }
+.m-track:hover { border-color: rgb(255 255 255 / .3); }
+.m-track[aria-current="true"] { border-color: var(--hot); color: #fff; background: rgb(255 61 139 / .18); }
+.m-file { position: relative; display: grid; place-items: center; height: 44px; border-radius: 999px; border: 1px dashed rgb(255 255 255 / .28); color: var(--a-ink-2); font-size: 14px; cursor: pointer; transition: border-color 140ms, color 140ms; }
+.m-file:hover, .m-file:focus-within { border-color: var(--hot); color: #fff; }
+.m-file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.m-time { margin: 0; font: 400 12px/1 var(--font-mono); color: var(--a-mute); }
+.m-tips { margin: 0; padding: 0 0 0 18px; display: grid; gap: 4px; color: var(--a-ink-2); font-size: 13px; }
+.m-tips b { font-weight: 500; color: #fff; }
+@media (max-width: 1279px) { .m-knobs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1023px) {
+  #music .console { grid-template-columns: minmax(0, 1fr); }
+  #music .console__pane + .console__pane { border-left: 0 !important; border-top: 1px solid rgb(255 255 255 / .12); }
+  #music .m-rack { order: 2; }
+}
+@media (max-width: 639px) {
+  .m-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .m-eq { gap: 2px; padding: 12px 6px 8px; } .m-vr { height: 110px; width: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .m-track, .m-file { transition: none; } }

@@ -49,7 +49,7 @@
   // mic -> pre analyser (gate detector)
   //     -> gain -> gate -> bass -> mid -> treble -> comp -> shaper -> master (mute/ptt) -> analyser
   //                                                                   -> dest (cable / recorder) + monitor
-  let A = null;
+  let A = null, starting = false;
   window.DIOS = { get A() { return A; }, TIER, locked: () => locked() };   // the soundboard (board.js) mixes into this graph
   let stream = null, src = null, raf = 0, muted = false, talking = false;
   let peakHold = 0, peakAt = 0, clips = 0, clipLatch = false, rec = null, recUrl = '';
@@ -152,20 +152,22 @@
 
   // The noise gate runs in an AudioWorklet (gate-worklet.js) on the audio thread, so it keeps working in a
   // hidden or minimised tab. Chrome pauses the page's drawing loop there, which is where the gate used to run.
-  async function addGate() {
+  async function addGate(a) {
     try {
-      await A.ctx.audioWorklet.addModule('gate-worklet.js');
-      const gw = new AudioWorkletNode(A.ctx, 'dios-gate', { numberOfInputs: 2, numberOfOutputs: 1, outputChannelCount: [1] });
+      await a.ctx.audioWorklet.addModule('gate-worklet.js');
+      if (A !== a) return;   // stopped while the worklet was loading
+      const gw = new AudioWorkletNode(a.ctx, 'dios-gate', { numberOfInputs: 2, numberOfOutputs: 1, outputChannelCount: [1] });
       gw.port.onmessage = e => { if (!A) return; A._openUntil = e.data.open ? Infinity : 0; dispatchEvent(new CustomEvent('dios:talk', { detail: !!e.data.open })); };
-      A.hp.disconnect(A.gate); A.hp.connect(gw, 0, 0); gw.connect(A.gate);
-      A.gw = gw; A._openUntil = Infinity;
-    } catch (e) { A.gw = null; }   // an old browser: the drawing loop gates instead, while the tab is visible
+      a.hp.disconnect(a.gate); a.hp.connect(gw, 0, 0); gw.connect(a.gate);
+      a.gw = gw; a._openUntil = Infinity;
+    } catch (e) { a.gw = null; }   // an old browser: the drawing loop gates instead, while the tab is visible
   }
 
   async function openMic() {
     const s = await navigator.mediaDevices.getUserMedia({ audio: {
       deviceId: S.inp ? { exact: S.inp } : undefined,
       echoCancellation: false, noiseSuppression: !!S.ns, autoGainControl: false } });
+    if (!A) { s.getTracks().forEach(t => t.stop()); throw new Error('stopped'); }
     if (src) src.disconnect();
     if (stream) stream.getTracks().forEach(t => t.stop());
     stream = s;
@@ -181,11 +183,16 @@
   }
 
   async function start() {
+    if (starting) return;
+    starting = true;
     $('err').textContent = '';
+    let me = null;
     try {
-      A = build();
-      await addGate();
+      me = A = build();
+      await addGate(me);
+      if (A !== me) return;
       await openMic();
+      if (A !== me) return;
       await listDevices();
       outEl.srcObject = A.dest.stream; await routeOut(); await outEl.play();
       monEl.srcObject = A.dest.stream; monEl.muted = !S.monitor;
@@ -200,8 +207,8 @@
       dispatchEvent(new Event('dios:start'));
     } catch (e) {
       $('err').textContent = 'Could not start: ' + (e.name === 'NotAllowedError' ? 'microphone access was blocked. Allow it in the address bar.' : e.message);
-      stop();
-    }
+      if (!me || A === me) stop();
+    } finally { starting = false; }
   }
 
   function stop() {
@@ -355,7 +362,7 @@
     S.out = e.target.value; save();
     if (A) { await routeOut(); if (S.out) monEl.play().catch(() => {}); }
   });
-  $('go').addEventListener('click', () => (A ? stop() : start()));
+  $('go').addEventListener('click', () => { if (starting) return; A ? stop() : start(); });
   $('rec').addEventListener('click', record);
   $('play').addEventListener('click', playTest);
 
@@ -428,7 +435,7 @@
       else {
         inp.value = ''; msg.textContent = 'Pro unlocked. You can now go up to 1,000,000x.'; msg.dataset.state = 'ok';
         TIER.pro = true; TIER.maxDb = 120; document.documentElement.dataset.tier = 'pro';
-        const n = $('proNote'); n.firstElementChild.textContent = 'Pro key'; n.lastElementChild.textContent = 'All levels unlocked, up to 1,000,000x (+120 dB).';
+        keyExp = j.exp || 0; paintTier();
         applyAll(); dispatchEvent(new Event('dios:tier'));
         setTimeout(() => { proForm.hidden = true; }, 2500);
       }
@@ -436,15 +443,39 @@
     go.disabled = false; go.textContent = 'Unlock Pro';
   });
 
-  // ask the server what this key unlocks; until it answers, the page acts as a normal key
+  // ask the server what this key unlocks and when it ends; until it answers, the page acts as a normal key.
+  // It asks again every minute: a key an admin turned off stops the amp and goes back to the key screen.
   document.documentElement.dataset.tier = 'normal';
-  fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(j => {
-    TIER.pro = !!(j && j.pro); TIER.maxDb = TIER.pro ? 120 : 100;
-    document.documentElement.dataset.tier = TIER.pro ? 'pro' : 'normal';
-    const n = $('proNote'); if (n && TIER.pro) { n.firstElementChild.textContent = 'Pro key'; n.lastElementChild.textContent = 'All levels unlocked, up to 1,000,000x (+120 dB).'; }
+  const life = exp => {
+    if (!exp) return 'never expires';
+    const s = exp - Date.now() / 1000;
+    if (s <= 0) return 'expired';
+    const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.ceil(s % 3600 / 60);
+    return 'ends in ' + (d >= 2 ? Math.ceil(s / 86400) + ' days' : d === 1 ? '1 day ' + h + ' h' : h >= 1 ? h + ' h ' + m + ' min' : m + ' min');
+  };
+  let keyExp = 0;
+  const paintTier = () => {
+    const n = $('proNote'); if (!n) return;
+    n.firstElementChild.textContent = (TIER.pro ? 'Pro key' : 'Normal key') + ' · ' + life(keyExp);
+    n.lastElementChild.textContent = TIER.pro ? 'All levels unlocked, up to 1,000,000x (+120 dB).' : 'Up to 100,000x. A Pro key unlocks 300,000x and 1,000,000x.';
     if ($('proForm')) $('proForm').hidden = TIER.pro;
-    applyAll(); dispatchEvent(new Event('dios:tier'));
+  };
+  const kicked = reason => {
+    if (A) stop();
+    const e = $('err'); e.textContent = reason === 'expired' ? 'Your key has expired.' : 'Your key was turned off by an admin.';
+    setTimeout(() => location.replace('/unlock.html?' + (reason === 'expired' ? 'expired=1' : 'off=1')), 1800);
+  };
+  const checkKey = first => fetch('/api/me' + (first ? '?load=1' : ''), { credentials: 'same-origin', cache: 'no-store' }).then(r => r.json()).then(j => {
+    if (!j || !j.ok) { if (j && (j.reason === 'revoked' || j.reason === 'expired')) kicked(j.reason); return; }
+    const was = TIER.pro;
+    TIER.pro = !!j.pro; TIER.maxDb = TIER.pro ? 120 : 100; keyExp = j.exp || 0;
+    document.documentElement.dataset.tier = TIER.pro ? 'pro' : 'normal';
+    paintTier();
+    if (first || was !== TIER.pro) { applyAll(); dispatchEvent(new Event('dios:tier')); }
   }).catch(() => {});
+  checkKey(true);
+  setInterval(() => checkKey(false), 60000);
+  setInterval(paintTier, 30000);
 
   applyAll();
   listDevices().catch(() => {});

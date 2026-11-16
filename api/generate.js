@@ -1,5 +1,6 @@
 // POST { user, password, days } -> a new access key. Only names and passwords listed in ADMINS may call it.
 import { makeKey, checkAdmin, sleep } from '../lib/keys.js';
+import { saveMade } from '../lib/store.js';
 
 export async function POST(request) {
   let body = {};
@@ -19,6 +20,7 @@ export async function POST(request) {
     const k = await makeKey(process.env.KEY_SECRET, days, pro);
     keys.push({ key: k.key, id: k.id, exp: k.exp, pro });
   }
+  try { await saveMade(keys, String(body.user).trim()); } catch (e) {}   // the list on the admin page; the keys work either way
   return Response.json({ ok: true, keys, by: String(body.user).trim() }, { headers: { 'Cache-Control': 'no-store' } });
 }
 

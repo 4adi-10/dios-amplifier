@@ -1,5 +1,6 @@
 // POST { key } -> sets the HttpOnly key cookie when the key is valid
 import { verifyKey, sleep } from '../lib/keys.js';
+import { isOff, noteUse } from '../lib/store.js';
 
 const MSG = {
   invalid: 'That key is not valid. Check it and try again.',
@@ -12,6 +13,8 @@ export async function POST(request) {
   let body = {};
   try { body = await request.json(); } catch (e) {}
   const r = await verifyKey(process.env.KEY_SECRET, body.key, process.env.REVOKED_KEYS);
+  if (r.ok && await isOff(r.id)) { r.ok = false; r.reason = 'revoked'; }
+  if (r.ok) await noteUse(r);
   if (!r.ok) {
     await sleep(500); // slows down anyone trying keys in a loop
     return Response.json({ ok: false, error: MSG[r.reason] || MSG.invalid }, { status: 401 });

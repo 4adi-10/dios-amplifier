@@ -495,6 +495,7 @@
     A.master.connect(mix); mix.connect(mlim).connect(mclip);
     mclip.connect(A.dest); mclip.connect(A.post);
     bus = makeBus(A.ctx, [mix]);
+    window.DIOS.mix = mix; window.DIOS.safeCurve = SAFE; window.DIOS.hardCurve = HARD;   // the music amplifier (music.js) joins the same mix
     hookYT(); paintYT(); startDuck();
     status('Live. Sounds and YouTube go to Discord with your mic.');
   });

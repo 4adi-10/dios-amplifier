@@ -4,99 +4,249 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>DIOS Amplifier: admin keys</title>
+<meta name="theme-color" content="#07040a">
+<title>DIOS Amplifier: admin</title>
+<link rel="icon" type="image/png" href="/icons/favicon-64.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400..600&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400..700&family=Funnel+Sans:wght@400..600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
-body{min-height:100svh;display:grid;place-items:center;padding:24px;color:#fff;font:400 16px/1.5 "Epilogue",system-ui,sans-serif;background:#0b0509;overflow-x:hidden;isolation:isolate}
-body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;filter:blur(20px);
- background:radial-gradient(38vmax 30vmax at 22% 25%,rgb(255 72 139/.42),transparent 62%),radial-gradient(40vmax 34vmax at 75% 80%,rgb(64 120 255/.3),transparent 64%);
+body{min-height:100svh;padding:32px 24px 64px;color:#fff;font:400 15px/1.5 "Funnel Sans",system-ui,sans-serif;background:#07040a;overflow-x:hidden;isolation:isolate}
+body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;filter:blur(24px);
+ background:radial-gradient(38vmax 30vmax at 18% 20%,rgb(255 61 139/.36),transparent 62%),radial-gradient(34vmax 28vmax at 84% 16%,rgb(255 154 77/.18),transparent 62%),radial-gradient(40vmax 34vmax at 72% 86%,rgb(77 139 255/.24),transparent 64%);
  animation:drift 26s ease-in-out infinite alternate}
 @keyframes drift{100%{transform:translate3d(-3vmax,3vmax,0) rotate(-6deg) scale(1.04)}}
-.card{position:relative;width:min(100%,560px);padding:32px;border-radius:28px;
- background:linear-gradient(135deg,rgb(255 255 255/.14),rgb(255 255 255/.04) 45%,rgb(255 255 255/.07));
- -webkit-backdrop-filter:blur(28px) saturate(185%);backdrop-filter:blur(28px) saturate(185%);border:1px solid rgb(255 255 255/.22);
- box-shadow:inset 0 1px 0 rgb(255 255 255/.45),0 30px 80px -28px rgb(0 0 0/.65),0 8px 24px -12px rgb(255 72 139/.25)}
-.brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:500;margin-bottom:24px}
-.mark{width:22px;height:18px;display:grid;gap:3px}.mark i{display:block;height:4px;border-radius:2px;background:#ff488b}.mark i:nth-child(2){width:75%}.mark i:nth-child(3){width:50%}
-h1{margin:0 0 6px;font-size:30px;line-height:1.1;font-weight:400;letter-spacing:-.03em}
-p{margin:0;color:#d0c2ca}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-label{display:block;margin:20px 0 8px;font-size:13px;font-weight:500;color:#d0c2ca}
-input,select{width:100%;height:48px;padding:0 14px;border-radius:14px;font:400 16px/1 "Epilogue",system-ui,sans-serif;color:#fff;
- background:rgb(0 0 0/.25);border:1px solid rgb(255 255 255/.18);box-shadow:inset 0 1px 3px rgb(0 0 0/.4);outline:none}
-select option{background:#1b0e17}
-input:focus,select:focus{border-color:rgb(255 160 200/.8);box-shadow:inset 0 1px 3px rgb(0 0 0/.4),0 0 0 4px rgb(255 72 139/.18)}
-.btn{width:100%;height:52px;margin-top:20px;border:0;border-radius:999px;cursor:pointer;font:500 16px/1 "Epilogue",system-ui,sans-serif;color:#fff;
- background:radial-gradient(120% 160% at 30% 0%,#ffc2d9 0%,#ff6aa1 35%,#ff2f7a 75%);box-shadow:inset 0 1px 0 rgb(255 255 255/.65),0 10px 28px -10px rgb(255 72 139/.8);transition:transform .14s}
-.btn:hover{transform:translateY(-1px)}.btn:active{transform:scale(.985)}.btn[disabled]{opacity:.6}
-.err{min-height:1.4em;margin-top:12px;color:#ffb3cf;font-size:14px}
-.keys{display:grid;gap:10px;margin-top:8px}
-.k{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:14px 16px;border-radius:16px;background:rgb(255 255 255/.06);border:1px solid rgb(255 255 255/.14)}
-.k code{font:500 15px/1.3 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.03em;word-break:break-all}
-.k small{grid-column:1/-1;color:#a89ca4;font-size:13px}
-.copy{height:36px;padding:0 14px;border-radius:999px;border:1px solid rgb(255 255 255/.22);background:linear-gradient(180deg,rgb(255 255 255/.14),rgb(255 255 255/.04));color:#fff;cursor:pointer;font:500 13px/1 "Epilogue",sans-serif}
-.copy:hover{border-color:rgb(255 255 255/.45)}
-.note{margin-top:20px;font-size:13px;color:#a89ca4}
-.note code{font-family:"JetBrains Mono",monospace;color:#fff}
-@media (max-width:520px){.row{grid-template-columns:1fr}.card{padding:24px}}
+.wrap{width:min(100%,1180px);margin:0 auto;display:grid;gap:20px}
+.glass{position:relative;padding:28px;border-radius:26px;background:linear-gradient(135deg,rgb(255 255 255/.12),rgb(255 255 255/.03) 45%,rgb(255 255 255/.06));
+ -webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);border:1px solid rgb(255 255 255/.18);
+ box-shadow:inset 0 1px 0 rgb(255 255 255/.35),0 30px 80px -30px rgb(0 0 0/.7)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font:500 20px/1 "Funnel Display",sans-serif;letter-spacing:-.02em}
+.mark{width:22px;height:18px;display:grid;gap:3px}.mark i{display:block;height:4px;border-radius:2px;background:#ff3d8b}.mark i:nth-child(2){width:75%}.mark i:nth-child(3){width:50%}
+h1{margin:0 0 6px;font:500 32px/1.1 "Funnel Display",sans-serif;letter-spacing:-.03em}
+h2{margin:0 0 4px;font:500 22px/1.2 "Funnel Display",sans-serif;letter-spacing:-.02em}
+p{margin:0;color:#cdbcc6}
+.muted{color:#a8979f}
+label{display:block;margin:0 0 6px;font-size:13px;font-weight:500;color:#cdbcc6}
+input,select{width:100%;height:46px;padding:0 14px;border-radius:14px;font:400 15px/1 "Funnel Sans",sans-serif;color:#fff;background:rgb(0 0 0/.28);border:1px solid rgb(255 255 255/.16);outline:none}
+select option{background:#150b12}
+input:focus,select:focus{border-color:rgb(255 140 180/.8);box-shadow:0 0 0 4px rgb(255 61 139/.18)}
+.btn{height:46px;padding:0 22px;border:0;border-radius:999px;cursor:pointer;font:500 15px/1 "Funnel Sans",sans-serif;color:#fff;white-space:nowrap;
+ background:radial-gradient(120% 160% at 30% 0%,#ffc2d9 0%,#ff6aa1 35%,#ff2f7a 75%);box-shadow:inset 0 1px 0 rgb(255 255 255/.6),0 10px 28px -10px rgb(255 61 139/.8);transition:transform .14s}
+.btn:hover{transform:translateY(-1px)}.btn:active{transform:scale(.985)}.btn[disabled]{opacity:.55;cursor:default;transform:none}
+.ghost{height:34px;padding:0 14px;border-radius:999px;border:1px solid rgb(255 255 255/.2);background:rgb(255 255 255/.06);color:#fff;cursor:pointer;font:500 13px/1 "Funnel Sans",sans-serif;white-space:nowrap;transition:border-color .14s,background-color .14s}
+.ghost:hover{border-color:rgb(255 255 255/.45)}
+.ghost.danger{border-color:rgb(255 90 130/.45);color:#ffc1d3}.ghost.danger:hover{background:rgb(255 61 139/.2);border-color:#ff3d8b}
+.err{min-height:1.4em;margin-top:10px;color:#ff9dbd;font-size:14px}
+.login{width:min(100%,460px);margin:10vh auto 0}
+.login form{display:grid;gap:14px;margin-top:22px}
+.row{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr)) auto;align-items:end}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.stat{padding:18px 20px;border-radius:20px;background:rgb(255 255 255/.05);border:1px solid rgb(255 255 255/.12)}
+.stat b{display:block;font:500 34px/1 "Funnel Display",sans-serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:#a8979f}
+.stat--hot b{background:linear-gradient(180deg,#fff,#ffc2da 45%,#ff3d8b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.new{display:grid;gap:8px;margin-top:16px}
+.k{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:12px 14px;border-radius:14px;background:rgb(255 61 139/.1);border:1px solid rgb(255 61 139/.35)}
+.k code{font:500 14px/1.3 "DM Mono",monospace;word-break:break-all}.k small{grid-column:1/-1;color:#cdbcc6;font-size:12px}
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0 12px}
+.tools input{max-width:300px;height:38px}
+.tabs{display:flex;gap:6px}
+.tabs button{height:34px;padding:0 12px;border-radius:999px;border:1px solid rgb(255 255 255/.14);background:transparent;color:#cdbcc6;cursor:pointer;font:500 13px/1 "Funnel Sans",sans-serif}
+.tabs button[aria-pressed="true"]{background:#fff;color:#150b12;border-color:#fff}
+.tablewrap{overflow-x:auto;border-radius:18px;border:1px solid rgb(255 255 255/.1)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:900px}
+th{position:sticky;top:0;text-align:left;font:500 12px/1 "Funnel Sans",sans-serif;color:#a8979f;padding:12px 14px;background:rgb(20 10 17/.9);border-bottom:1px solid rgb(255 255 255/.1)}
+td{padding:12px 14px;border-bottom:1px solid rgb(255 255 255/.07);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr[data-off] td{opacity:.55}tr[data-off] td:last-child{opacity:1}
+td.mono{font:400 13px/1.3 "DM Mono",monospace}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;font:500 12px/1 "DM Mono",monospace;border:1px solid rgb(255 255 255/.18);color:#cdbcc6}
+.tag--pro{border:0;color:#1a0610;background:linear-gradient(90deg,#ff3d8b,#ff9a4d)}
+.tag--on{border-color:rgb(78 224 160/.5);color:#9ff0c9}.tag--off{border-color:rgb(255 90 130/.5);color:#ffb3c8}.tag--exp{color:#ffd59a;border-color:rgb(255 181 71/.45)}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+.empty{padding:28px;text-align:center;color:#a8979f}
+.note{margin-top:14px;font-size:13px;color:#a8979f}
+[hidden]{display:none!important}
+@media (max-width:900px){.row{grid-template-columns:1fr 1fr}.row .btn{grid-column:1/-1}.stats{grid-template-columns:1fr 1fr}}
 @media (prefers-reduced-motion:reduce){body::before{animation:none}}
 </style>
 </head>
 <body>
-<main class="card">
+
+<!-- sign in: the same admin name and password as before (ADMINS in Vercel); kept only in this tab -->
+<main class="glass login" id="login">
   <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>DIOS Amplifier</div>
-  <h1>Make access keys</h1>
-  <p>For admins only. Each key unlocks the amplifier in one person’s browser.</p>
-  <form id="f" novalidate>
-    <div class="row">
-      <div><label for="user">Admin name</label><input id="user" autocomplete="username" required></div>
-      <div><label for="pw">Admin password</label><input id="pw" type="password" autocomplete="current-password" required></div>
-    </div>
-    <div class="row">
-      <div><label for="days">Key lasts</label>
-        <select id="days"><option value="1">1 day</option><option value="7">7 days</option><option value="30" selected>30 days</option><option value="365">1 year</option><option value="0">Never expires</option></select></div>
-      <div><label for="count">How many keys</label>
-        <select id="count"><option>1</option><option>3</option><option>5</option><option>10</option></select></div>
-    </div>
-    <label for="tier">Key type</label>
-    <select id="tier"><option value="normal">Normal: up to 100,000x</option><option value="pro">Pro: up to 1,000,000x</option></select>
-    <button class="btn" id="go" type="submit">Generate keys</button>
-    <div class="err" id="err" role="alert"></div>
+  <h1 style="margin-top:24px">Admin</h1>
+  <p>Make keys, see who uses them, and turn keys off.</p>
+  <form id="lf" novalidate>
+    <div><label for="user">Admin name</label><input id="user" autocomplete="username" required></div>
+    <div><label for="pw">Admin password</label><input id="pw" type="password" autocomplete="current-password" required></div>
+    <button class="btn" id="lgo" type="submit">Sign in</button>
+    <div class="err" id="lerr" role="alert"></div>
   </form>
-  <div class="keys" id="keys" aria-live="polite"></div>
-  <p class="note">To turn a key off, add its id to <code>REVOKED_KEYS</code> in Vercel (Settings, Environment Variables) and redeploy.</p>
 </main>
+
+<div class="wrap" id="dash" hidden>
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>DIOS Amplifier admin</div>
+    <div style="display:flex;gap:8px"><button class="ghost" type="button" id="refresh">Refresh</button><button class="ghost" type="button" id="out">Sign out</button></div>
+  </header>
+
+  <section class="stats" aria-label="Key totals">
+    <div class="stat stat--hot"><b id="sActive">0</b><span>Active now (last 24 h)</span></div>
+    <div class="stat"><b id="sWorking">0</b><span>Working keys</span></div>
+    <div class="stat"><b id="sPro">0</b><span>Pro keys</span></div>
+    <div class="stat"><b id="sOff">0</b><span>Turned off</span></div>
+    <div class="stat"><b id="sExp">0</b><span>Expired</span></div>
+  </section>
+
+  <section class="glass" aria-labelledby="mk-h">
+    <h2 id="mk-h">Make keys</h2>
+    <p class="muted">Each key unlocks the amplifier in one person's browser.</p>
+    <form id="gf" novalidate style="margin-top:16px">
+      <div class="row">
+        <div><label for="tier">Key type</label><select id="tier"><option value="normal">Normal: up to 100,000x</option><option value="pro">Pro: up to 1,000,000x</option></select></div>
+        <div><label for="days">Key lasts</label><select id="days"><option value="1">1 day</option><option value="7">7 days</option><option value="30" selected>30 days</option><option value="365">1 year</option><option value="0">Never expires</option></select></div>
+        <div><label for="count">How many keys</label><select id="count"><option>1</option><option>3</option><option>5</option><option>10</option></select></div>
+        <div></div>
+        <button class="btn" id="go" type="submit">Generate keys</button>
+      </div>
+      <div class="err" id="gerr" role="alert"></div>
+    </form>
+    <div class="new" id="newKeys" aria-live="polite"></div>
+  </section>
+
+  <section class="glass" aria-labelledby="ls-h">
+    <h2 id="ls-h">All keys</h2>
+    <p class="muted" id="lsNote">Turning a key off sends its user back to the key screen within a minute.</p>
+    <div class="tools">
+      <input id="q" type="search" placeholder="Search by key id or key" aria-label="Search keys">
+      <div class="tabs" role="group" aria-label="Show">
+        <button type="button" data-f="all" aria-pressed="true">All</button><button type="button" data-f="on" aria-pressed="false">Working</button><button type="button" data-f="pro" aria-pressed="false">Pro</button><button type="button" data-f="off" aria-pressed="false">Turned off</button><button type="button" data-f="exp" aria-pressed="false">Expired</button>
+      </div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Key</th><th>Type</th><th>Status</th><th>Expires</th><th>Made</th><th>Last used</th><th>Opens</th><th style="text-align:right">Access</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="err" id="lerr2" role="alert"></p>
+  </section>
+</div>
+
 <script>
 const $ = id => document.getElementById(id);
-const fmt = e => e ? 'Expires ' + new Date(e * 1000).toLocaleString() : 'Never expires';
-$('f').addEventListener('submit', async e => {
-  e.preventDefault(); $('err').textContent = '';
+let cred = null, keys = [], now = Date.now() / 1000, filter = 'all';
+try { cred = JSON.parse(sessionStorage.getItem('dios-admin') || 'null'); } catch (e) {}
+const api = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...cred, ...body }) })
+  .then(async r => ({ r, j: await r.json().catch(() => ({})) }));
+const ago = t => { if (!t) return 'never'; const s = now - t; if (s < 90) return 'just now'; if (s < 3600) return Math.round(s / 60) + ' min ago'; if (s < 86400) return Math.round(s / 3600) + ' h ago'; if (s < 86400 * 45) return Math.round(s / 86400) + ' days ago'; return new Date(t * 1000).toLocaleDateString(); };
+const until = t => { if (!t) return 'never'; const s = t - now; if (s <= 0) return 'expired ' + ago(t); if (s < 86400) return 'in ' + Math.ceil(s / 3600) + ' h'; return 'in ' + Math.ceil(s / 86400) + ' days'; };
+const expired = k => k.exp && k.exp < now;
+
+async function signIn(e) {
+  if (e) e.preventDefault();
+  $('lerr').textContent = '';
+  if (!cred) cred = { user: $('user').value.trim(), password: $('pw').value };
+  $('lgo').disabled = true; $('lgo').textContent = 'Signing in…';
+  try {
+    const { r, j } = await api('/api/keys', { action: 'list' });
+    if (!r.ok || !j.ok) { cred = null; sessionStorage.removeItem('dios-admin'); $('lerr').textContent = j.error || 'Could not sign in.'; }
+    else { sessionStorage.setItem('dios-admin', JSON.stringify(cred)); $('login').hidden = true; $('dash').hidden = false; take(j); }
+  } catch (x) { cred = null; $('lerr').textContent = 'Could not reach the server.'; }
+  $('lgo').disabled = false; $('lgo').textContent = 'Sign in';
+}
+function take(j) {
+  now = j.now || Date.now() / 1000; keys = j.keys || [];
+  if (j.store === false) $('lsNote').textContent = 'The key database is not connected yet, so keys cannot be listed or turned off here.';
+  stats(); draw();
+}
+async function load() { try { const { j } = await api('/api/keys', { action: 'list' }); if (j.ok) take(j); else $('lerr2').textContent = j.error || ''; } catch (x) { $('lerr2').textContent = 'Could not reach the server.'; } }
+function stats() {
+  const working = keys.filter(k => !k.off && !expired(k));
+  $('sActive').textContent = working.filter(k => k.last && now - k.last < 86400).length;
+  $('sWorking').textContent = working.length;
+  $('sPro').textContent = working.filter(k => k.pro).length;
+  $('sOff').textContent = keys.filter(k => k.off).length;
+  $('sExp').textContent = keys.filter(k => !k.off && expired(k)).length;
+}
+function draw() {
+  const q = $('q').value.trim().toLowerCase().replace(/^dios-?/, '');
+  const list = keys.filter(k => {
+    if (filter === 'on' && (k.off || expired(k))) return false;
+    if (filter === 'pro' && !k.pro) return false;
+    if (filter === 'off' && !k.off) return false;
+    if (filter === 'exp' && !(expired(k) && !k.off)) return false;
+    return !q || k.id.includes(q) || (k.key || '').toLowerCase().replace(/^dios-?/, '').includes(q);
+  }).sort((a, b) => (b.last || b.made) - (a.last || a.made));
+  const tb = $('rows'); tb.textContent = '';
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">' + (keys.length ? 'No keys match.' : 'No keys yet. Keys show up here when they are made or first used.') + '</td></tr>'; return; }
+  for (const k of list) {
+    const tr = document.createElement('tr'); if (k.off) tr.dataset.off = '';
+    const status = k.off ? '<span class="tag tag--off">Off</span>' : expired(k) ? '<span class="tag tag--exp">Expired</span>' : '<span class="tag tag--on">Working</span>';
+    tr.innerHTML = '<td class="mono"></td><td>' + (k.pro ? '<span class="tag tag--pro">Pro</span>' : '<span class="tag">Normal</span>') + '</td><td>' + status + '</td><td></td><td></td><td></td><td class="mono"></td><td><div class="acts"></div></td>';
+    const c = tr.children;
+    c[0].textContent = k.key || 'id ' + k.id; c[0].title = 'id ' + k.id;
+    c[3].textContent = until(k.exp); c[4].textContent = k.old ? 'before the list' : ago(k.made) + (k.by ? ' by ' + k.by : '');
+    c[5].textContent = ago(k.last); c[6].textContent = k.uses || 0;
+    const acts = c[7].firstChild;
+    if (k.key) acts.append(btn('Copy', 'ghost', async b => { try { await navigator.clipboard.writeText(k.key); b.textContent = 'Copied'; } catch (x) { b.textContent = 'Select it'; } setTimeout(() => b.textContent = 'Copy', 1400); }));
+    acts.append(k.off ? btn('Turn on', 'ghost', () => act('on', k)) : btn('Turn off', 'ghost danger', () => act('off', k)));
+    acts.append(btn('Delete', 'ghost danger', () => act('delete', k)));
+    tb.append(tr);
+  }
+}
+function btn(label, cls, fn) { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.addEventListener('click', () => fn(b)); return b; }
+async function act(action, k) {
+  const name = k.key || 'id ' + k.id;
+  if (action === 'off' && !confirmStep(k, 'off')) return;
+  if (action === 'delete' && !confirmStep(k, 'delete')) return;
+  $('lerr2').textContent = '';
+  const { j } = await api('/api/keys', { action, id: k.id });
+  if (!j.ok) { $('lerr2').textContent = j.error || 'That did not work.'; return; }
+  load();
+}
+// two clicks instead of a browser dialog: the first click arms the button for 3 seconds
+const armed = new Map();
+function confirmStep(k, what) {
+  const tag = what + k.id;
+  if (armed.get(tag) > Date.now()) { armed.delete(tag); return true; }
+  armed.set(tag, Date.now() + 3000);
+  $('lerr2').textContent = (what === 'off' ? 'Click Turn off again to cut this key\'s access.' : 'Click Delete again to remove this key from the list. It stays turned off.');
+  return false;
+}
+
+$('lf').addEventListener('submit', e => { cred = null; signIn(e); });
+$('refresh').addEventListener('click', load);
+$('out').addEventListener('click', () => { sessionStorage.removeItem('dios-admin'); location.reload(); });
+$('q').addEventListener('input', draw);
+document.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.f; document.querySelectorAll('[data-f]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); draw(); }));
+$('gf').addEventListener('submit', async e => {
+  e.preventDefault(); $('gerr').textContent = '';
   $('go').disabled = true; $('go').textContent = 'Generating…';
   try {
-    const r = await fetch('/api/generate', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ user: $('user').value, password: $('pw').value, days: +$('days').value, count: +$('count').value, pro: $('tier').value === 'pro' }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.ok) { $('err').textContent = j.error || 'Could not make keys.'; }
+    const { r, j } = await api('/api/generate', { days: +$('days').value, count: +$('count').value, pro: $('tier').value === 'pro' });
+    if (!r.ok || !j.ok) $('gerr').textContent = j.error || 'Could not make keys.';
     else {
       j.keys.forEach(k => {
         const d = document.createElement('div'); d.className = 'k';
-        d.innerHTML = '<code></code><button type="button" class="copy">Copy</button><small></small>';
+        d.innerHTML = '<code></code><button type="button" class="ghost">Copy</button><small></small>';
         d.querySelector('code').textContent = k.key;
-        d.querySelector('small').textContent = (k.pro ? 'Pro · ' : 'Normal · ') + fmt(k.exp) + ' · id ' + k.id + ' · made by ' + j.by;
-        d.querySelector('.copy').addEventListener('click', async ev => {
-          try { await navigator.clipboard.writeText(k.key); ev.target.textContent = 'Copied'; } catch (x) { ev.target.textContent = 'Select and copy'; }
-          setTimeout(() => ev.target.textContent = 'Copy', 1500);
-        });
-        $('keys').prepend(d);
+        d.querySelector('small').textContent = (k.pro ? 'Pro' : 'Normal') + ' · ' + (k.exp ? 'expires ' + new Date(k.exp * 1000).toLocaleString() : 'never expires') + ' · id ' + k.id;
+        d.querySelector('button').addEventListener('click', async ev => { try { await navigator.clipboard.writeText(k.key); ev.target.textContent = 'Copied'; } catch (x) { ev.target.textContent = 'Select it'; } setTimeout(() => ev.target.textContent = 'Copy', 1400); });
+        $('newKeys').prepend(d);
       });
+      load();
     }
-  } catch (x) { $('err').textContent = 'Could not reach the server.'; }
+  } catch (x) { $('gerr').textContent = 'Could not reach the server.'; }
   $('go').disabled = false; $('go').textContent = 'Generate keys';
 });
+setInterval(() => { if (cred && !$('dash').hidden && !document.hidden) load(); }, 30000);
+if (cred) signIn();
 </script>
 </body>
 </html>
